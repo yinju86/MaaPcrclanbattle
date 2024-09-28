@@ -75,7 +75,8 @@ jobs:
         shell: bash
         run: |
           python ./install.py ${{ needs.meta.outputs.tag }}
-          pip install pyinstaller,pyqt5
+          pip install pyinstaller
+          pip install pyqt5
           pyinstaller --onefile -w generator.py
           cp ./dist/generator.exe ./install
 
