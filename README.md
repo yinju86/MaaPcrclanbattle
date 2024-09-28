@@ -18,6 +18,7 @@
 
 
 ## 使用方法
+### [视频演示](https://www.bilibili.com/video/BV1HExBevEy1)
 ### 0. 下载 [Release 包](https://github.com/yinju86/MaaPcrclanbattle/releases)
 ### 1. 运行generator.exe
 ### 2. 输入轴
