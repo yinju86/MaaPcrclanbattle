@@ -77,10 +77,11 @@ jobs:
           python ./install.py ${{ needs.meta.outputs.tag }}
           pip install pyinstaller
           pyinstaller --onefile -w generator.py
+          cp ./dist/generator.exe ./install
 
       - uses: actions/upload-artifact@v3
         with:
-          name: MaaXXX-win-${{ matrix.arch }}
+          name: MaaPcrclanbattle-win-${{ matrix.arch }}
           path: "install"
 
   ubuntu:
@@ -112,7 +113,7 @@ jobs:
           
       - uses: actions/upload-artifact@v3
         with:
-          name: MaaXXX-linux-${{ matrix.arch }}
+          name: MaaPcrclanbattle-linux-${{ matrix.arch }}
           path: "install"
 
   macos:
@@ -144,7 +145,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: MaaXXX-macos-${{ matrix.arch }}
+          name: MaaPcrclanbattle-macos-${{ matrix.arch }}
           path: "install"
 
   release:
