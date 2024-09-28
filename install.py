@@ -54,10 +54,6 @@ def install_resource():
         install_path,
     )
     shutil.copy2(
-        working_dir / "assets" / "generator.exe",
-        install_path,
-    )
-    shutil.copy2(
         working_dir / "assets" / "scriptgeneration.py",
         install_path,
     )

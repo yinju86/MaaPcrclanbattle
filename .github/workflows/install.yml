@@ -75,6 +75,8 @@ jobs:
         shell: bash
         run: |
           python ./install.py ${{ needs.meta.outputs.tag }}
+          pip install pyinstaller
+          pyinstaller --onefile -w generator.py
 
       - uses: actions/upload-artifact@v3
         with:
@@ -107,7 +109,7 @@ jobs:
         shell: bash
         run: |
           python ./install.py ${{ needs.meta.outputs.tag }}
-
+          
       - uses: actions/upload-artifact@v3
         with:
           name: MaaXXX-linux-${{ matrix.arch }}
