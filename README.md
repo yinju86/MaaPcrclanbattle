@@ -39,10 +39,17 @@
 
 ### 4. 虽然设定了最后自己按暂停,但是还是有滑刀风险
 
+### 5. 使用 MaaPicli 时弹窗报错，应用程序错误：应用程序无法正常启动
+
+![缺少运行库](https://github.com/user-attachments/assets/942df84b-f47d-4bb5-98b5-ab5d44bc7c2a)
+
+一般是电脑缺少某些运行库，请安装一下 [vc_redist](https://aka.ms/vs/17/release/vc_redist.x64.exe) 。
+
 ## Todo
 ### boss ub识别
 ### 多服务器支持
 ### 探索最佳截图间隔,减少性能消耗
+### GUI
 
 ## 鸣谢
 
