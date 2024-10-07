@@ -49,7 +49,7 @@
 ### boss ub识别
 ### 多服务器支持
 ### 探索最佳截图间隔,减少性能消耗
-### GUI
+### ~~MaaPicli GUI~~(不做了,有需要自行参考[MFAWPF](https://github.com/SweetSmellFox/MFAWPF) 将generator.exe也复制到MFA文件夹中使用)
 
 ## 鸣谢
 
