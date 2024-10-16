@@ -1,9 +1,9 @@
 import sys
-from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QFileDialog, QMessageBox,QHBoxLayout
+from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QFileDialog, QMessageBox,QHBoxLayout,QDialog,QTextEdit
 from PyQt5.QtCore import Qt
 import random
 import scriptgeneration
-
+import sharecode
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -32,11 +32,23 @@ class MainWindow(QWidget):
         self.input_box = QLineEdit()
         self.input_layout.addWidget(self.label)
         self.input_layout.addWidget(self.input_box)
-        self.output_button = QPushButton('输出脚本')
-        self.output_button.clicked.connect(self.output_content)
+        self.output_button = QPushButton('生成脚本')
+        self.output_button.clicked.connect(self.gen1)
+        self.share_layout = QHBoxLayout()
+        self.label2 = QLabel("分享码：")
+        self.share_box = QLineEdit()
+        self.share_button= QPushButton('一键分享')
+        self.share_button.clicked.connect(self.show_popup)
+        self.sharein_button= QPushButton('读取分享')
+        self.sharein_button.clicked.connect(self.gen2)
+        self.share_layout.addWidget(self.label2)
+        self.share_layout.addWidget(self.share_box)
+        self.share_layout.addWidget(self.sharein_button)
         self.layout.addLayout(self.input_layout)
+        
         self.layout.addWidget(self.output_button)
-
+        self.layout.addWidget(self.share_button)
+        self.layout.addLayout(self.share_layout)
         self.setLayout(self.layout)
     def add_row(self):
         row_index = self.table.rowCount()
@@ -84,19 +96,19 @@ class MainWindow(QWidget):
     def output_content(self):
         content = []
         for row in range(self.table.rowCount()):
-            time = self.table.item(row, 0).text()
+            time = self.table.item(row, 0).text().replace("初始状态","126")
             time_point = self.table.cellWidget(row, 1).currentText()
             status = []
             status_layout = self.table.cellWidget(row, 2)
             for checkbox in status_layout.findChildren(QCheckBox):
                 status.append(checkbox.isChecked())
             content.append((time, time_point,status))
-
+        return content
+    
+    def usecontent(self,content):
         output_text = []
         for i, (t, tp, s) in enumerate(content):
-            if i == 0 and t=="初始状态":
-                output_text.append(('1:26', tp, s))
-            elif i == 0 :
+            if i == 0 :
                 output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s))
             else:
                 prev_status = content[i-1][2]
@@ -106,7 +118,46 @@ class MainWindow(QWidget):
         input_text = self.input_box.text()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
         scriptgeneration.generation(stepname=stepname,stepfile=output_text)
-
+        msg = QMessageBox()
+        msg.setText(f'已生成脚本 "{stepname}"')
+        msg.setIcon(QMessageBox.Information)
+        msg.exec_()
+    def gen1(self):
+        c=self.output_content()
+        self.usecontent(c)
+        
+    def show_popup(self):
+        # 创建自定义的对话框
+        c=self.output_content()
+        code=sharecode.to_share(c)
+        dialog = QDialog(self)
+        dialog.setWindowTitle('分享码')
+        text_edit = QTextEdit(dialog)
+        text_edit.setReadOnly(True)  # 设置为只读模式，防止用户编辑
+        input_text = self.input_box.text()
+        stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
+        text_edit.setText(f"{stepname}:{code}")  # 设置要显示的文本
+        # 设置布局
+        layout = QVBoxLayout()
+        layout.addWidget(text_edit)
+        dialog.setLayout(layout)
+        # 显示对话框
+        dialog.exec_()
+    def gen2(self):
+        a=self.share_box.text()
+        try:
+            if ":" in a:
+                a=a.split(":")
+                c=sharecode.from_share(a[1])
+                self.input_box.setText(a[0])
+            else:
+                c=sharecode.from_share(a)
+            self.usecontent(c)
+        except:
+            msg = QMessageBox()
+            msg.setText('分享码有误或使用方法错误')
+            msg.setIcon(QMessageBox.Information)
+            msg.exec_()
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_win = MainWindow()
