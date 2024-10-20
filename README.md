@@ -18,10 +18,10 @@
 
 
 ## 使用方法
-### ~~[视频演示](https://www.bilibili.com/video/BV1HExBevEy1)~~被霹雳霹雳删力
+### [视频演示](https://www.bilibili.com/video/BV1uiyMY4EnJ)
 ### 0. 下载 [Release 包](https://github.com/yinju86/MaaPcrclanbattle/releases)
 ### 1. 运行generator.exe
-### 2. 输入轴
+### 2. 输入轴,,也可以一键导入分享码
 ![轴输入界面](https://github.com/yinju86/imagefolder/blob/main/input.png)
 
 ### 3.进入预备挑战界面,需要自行选人,仅支持1280*720分辨率
