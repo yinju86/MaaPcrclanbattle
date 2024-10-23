@@ -24,7 +24,7 @@ def generation(stepname,stepfile):
     "template": [
     "start0.png"
     ],
-    "action": "Click","rate_limit":30,"timeout":120000,"next": [
+    "action": "Click","rate_limit":30,"timeout":500000,"next": [
     "{stepname}start2","{stepname}autoc","{stepname}autoo"
     ]
     }},"{stepname}start2": {{
@@ -35,7 +35,7 @@ def generation(stepname,stepfile):
     "template": [
     "start2.png"
     ],
-    "action": "Click","rate_limit":30,"timeout":120000,"next": [
+    "action": "Click","rate_limit":30,"timeout":500000,"next": [
     "{stepname}autoc","{stepname}autoo"
     ]
     }},"{stepname}autoc": {{
@@ -84,7 +84,7 @@ def generation(stepname,stepfile):
     ],
     "expected": [
     "{t}"
-    ],"rate_limit":30,"timeout":120000,"next": [
+    ],"rate_limit":30,"timeout":500000,"next": [
     "{stepname}tpc_{i}"
     ],
     "action": "DoNothing"
@@ -113,7 +113,7 @@ def generation(stepname,stepfile):
     195,
     210
 
-    ],"rate_limit":30,"timeout":120000,"next": [
+    ],"rate_limit":30,"timeout":500000,"next": [
     "{stepname}tpc_{i}"
     ]
     }},"{stepname}tpc_{i}": {{
@@ -130,7 +130,7 @@ def generation(stepname,stepfile):
     "action": "DoNothing",
     "template": [
         "aub.png"
-    ],"rate_limit":500,"timeout":120000,"next": [
+    ],"rate_limit":500,"timeout":500000,"next": [
     "{stepname}c1_{i}","{stepname}c2_{i}","{stepname}c3_{i}","{stepname}c4_{i}","{stepname}c5_{i}","{stepname}c6_{i}","{stepname}tc_{i+1}"
     ]
     }},"{stepname}c1_{i}": {{
@@ -142,7 +142,7 @@ def generation(stepname,stepfile):
     550,
     50,
     50
-    ],"rate_limit":30,"timeout":120000,"next": [
+    ],"rate_limit":30,"timeout":500000,"next": [
     "{stepname}c2_{i}","{stepname}c3_{i}","{stepname}c4_{i}","{stepname}c5_{i}","{stepname}c6_{i}","{stepname}tc_{i+1}"
     ]
     }},"{stepname}c2_{i}": {{
@@ -154,7 +154,7 @@ def generation(stepname,stepfile):
     550,
     50,
     50
-    ],"rate_limit":30,"timeout":120000,"next": [
+    ],"rate_limit":30,"timeout":500000,"next": [
     "{stepname}c3_{i}","{stepname}c4_{i}","{stepname}c5_{i}","{stepname}c6_{i}","{stepname}tc_{i+1}"
     ]
     }},"{stepname}c3_{i}": {{
@@ -166,7 +166,7 @@ def generation(stepname,stepfile):
     550,
     50,
     50
-    ],"rate_limit":30,"timeout":120000,"next": [
+    ],"rate_limit":30,"timeout":500000,"next": [
     "{stepname}c4_{i}","{stepname}c5_{i}","{stepname}c6_{i}","{stepname}tc_{i+1}"]
     }},"{stepname}c4_{i}": {{
     "recognition": "DirectHit","pre_delay":15,"post_delay":15,
@@ -177,7 +177,7 @@ def generation(stepname,stepfile):
     550,
     50,
     50
-    ],"rate_limit":30,"timeout":120000,"next": [
+    ],"rate_limit":30,"timeout":500000,"next": [
     "{stepname}c5_{i}","{stepname}c6_{i}","{stepname}tc_{i+1}"]
     }},"{stepname}c5_{i}": {{
     "recognition": "DirectHit","pre_delay":15,"post_delay":15,
@@ -188,7 +188,7 @@ def generation(stepname,stepfile):
     550,
     50,
     50
-    ],"rate_limit":30,"timeout":120000,"next": ["{stepname}c6_{i}","{stepname}tc_{i+1}"]
+    ],"rate_limit":30,"timeout":500000,"next": ["{stepname}c6_{i}","{stepname}tc_{i+1}"]
     }},"{stepname}c6_{i}": {{
     "recognition": "DirectHit","pre_delay":15,"post_delay":15,
     "enabled":{s[5]},
@@ -198,10 +198,10 @@ def generation(stepname,stepfile):
     537,
     30,
     30
-    ],"rate_limit":30,"timeout":120000,"next": ["{stepname}tc_{i+1}"]
+    ],"rate_limit":30,"timeout":500000,"next": ["{stepname}tc_{i+1}"]
     }},
     '''
-    output_s=output_s.replace(f',"{stepname}tc_{len(stepfile)}"',f',"{stepname}p"').replace(f'''"timeout":120000,"next": ["{stepname}tc_{len(stepfile)}"]
+    output_s=output_s.replace(f',"{stepname}tc_{len(stepfile)}"',f',"{stepname}p"').replace(f'''"timeout":500000,"next": ["{stepname}tc_{len(stepfile)}"]
     }},''',f'''"timeout":180000,"next": ["{stepname}p"]
     }},"{stepname}p":{{"recognition": "OCR",
     "roi": [
