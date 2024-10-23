@@ -123,8 +123,14 @@ class MainWindow(QWidget):
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
     def gen1(self):
-        c=self.output_content()
-        self.usecontent(c)
+        try:
+            c=self.output_content()
+            self.usecontent(c)
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setText(f'发生错误{e}')
+            msg.setIcon(QMessageBox.Information)
+            msg.exec_()
         
     def show_popup(self):
         # 创建自定义的对话框
@@ -153,9 +159,9 @@ class MainWindow(QWidget):
             else:
                 c=sharecode.from_share(a)
             self.usecontent(c)
-        except:
+        except Exception as e:
             msg = QMessageBox()
-            msg.setText('分享码有误或使用方法错误')
+            msg.setText(f'分享码有误或使用方法错误{e}')
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
 if __name__ == '__main__':
