@@ -130,14 +130,14 @@ class MainWindow(QWidget):
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
     def gen1(self):
-        if 1:#try:
+        try:
             c,t=self.output_content()
             self.usecontent(c,t)
-        '''except Exception as e:
+        except Exception as e:
             msg = QMessageBox()
             msg.setText(f'发生错误{e}')
             msg.setIcon(QMessageBox.Information)
-            msg.exec_()'''
+            msg.exec_()
         
     def show_popup(self):
         # 创建自定义的对话框
@@ -158,7 +158,7 @@ class MainWindow(QWidget):
         dialog.exec_()
     def gen2(self):
         a=self.share_box.text()
-        if 1:#try:
+        try:
             if ":" in a:
                 a=a.split(":")
                 c,t=sharecode.from_share(a[1])
@@ -166,11 +166,11 @@ class MainWindow(QWidget):
             else:
                 c,t=sharecode.from_share(a)
             self.usecontent(c,t)
-        '''except Exception as e:
+        except Exception as e:
             msg = QMessageBox()
             msg.setText(f'分享码有误或使用方法错误{e}')
             msg.setIcon(QMessageBox.Information)
-            msg.exec_()'''
+            msg.exec_()
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_win = MainWindow()
