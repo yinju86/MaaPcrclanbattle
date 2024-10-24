@@ -1,4 +1,4 @@
-def to_share(data):
+def to_share(data,td):
     result = []
     for entry in data:
         # 提取每个部分
@@ -12,10 +12,19 @@ def to_share(data):
         # 补齐6位数字
         result.append(combined_number.zfill(6))
     result=six_digit_to_base62(result)
+    a=dict_to_string(td)
+    result=result+"!"+a
     return result
 
 def from_share(data):
-    data=base62_to_six_digit(data)
+    data0=data.split("!")[0]
+    try:
+        data1=data.split("!")[1]
+        td=string_to_dict(data1)
+    except:
+
+        td={}
+    data=base62_to_six_digit(data0)
     result = []
     for entry in data:
         # 拆分六位数字，前3位是十进制，第四位是一位数字，后两位是二进制
@@ -26,7 +35,7 @@ def from_share(data):
         bool_list = [b == '1' for b in binary_part]
         # 组合成原始结构
         result.append((decimal_part, single_digit, bool_list))
-    return result
+    return result,td
 
 # 62进制字符集
 charset = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -73,3 +82,20 @@ def base62_to_six_digit(encoded_str):
         # 转为六位数字，不足的用 '0' 补齐
         result.append(str(decimal_number).zfill(6))
     return result
+
+def dict_to_string(d):
+    if not d:  # 检查字典是否为空
+        return ''
+    return ','.join(f'{k}-{v}' for k, v in d.items())
+
+def string_to_dict(s):
+    if not s:  # 检查字符串是否为空
+        return {}
+    return {int(k): float(v) if '.' in v else int(v) for k, v in (item.split('-') for item in s.split(','))}
+
+
+
+
+if __name__ == '__main__':
+    data="wMysXg!1-1.0"
+    print(from_share(data))

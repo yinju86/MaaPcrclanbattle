@@ -73,9 +73,10 @@ def generation(stepname,stepfile):
     }},
     '''
     for i in range(len(stepfile)):
-        t,tp,s=stepfile[i]
+        t,tp,s,tdelay=stepfile[i]
         output_s= output_s+f'''"{stepname}tc_{i}": {{
     "recognition": "OCR",
+    "post_delay":{tdelay*1000},
     "roi": [
     1075,
     20,
@@ -118,7 +119,7 @@ def generation(stepname,stepfile):
     ]
     }},"{stepname}tpc_{i}": {{
     "threshold": 0.90,
-    "recognition": "TemplateMatch",
+    "recognition": "{"TemplateMatch" if int(tp) !=0 else "DirectHit"}",
     "roi": [
 
     {ubflag[int(tp)-1]},
@@ -202,7 +203,7 @@ def generation(stepname,stepfile):
     }},
     '''
     output_s=output_s.replace(f',"{stepname}tc_{len(stepfile)}"',f',"{stepname}p"').replace(f'''"timeout":500000,"next": ["{stepname}tc_{len(stepfile)}"]
-    }},''',f'''"timeout":180000,"next": ["{stepname}p"]
+    }},''',f'''"timeout":500000,"next": ["{stepname}p"]
     }},"{stepname}p":{{"recognition": "OCR",
     "roi": [
     1075,

@@ -12,13 +12,13 @@ class MainWindow(QWidget):
 
     def initUI(self):
         self.setWindowTitle('轴输入窗口')
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1000, 600)
 
         self.layout = QVBoxLayout()
 
         self.table = QTableWidget()
-        self.table.setColumnCount(4)  # 时间、时点、状态、操作
-        self.table.setHorizontalHeaderLabels(['时间', '?号位UB后', '状态', '操作'])
+        self.table.setColumnCount(5)  # 时间、时点、状态、操作
+        self.table.setHorizontalHeaderLabels(['时间', '?号位UB后', '状态', '操作','延时(秒)'])
         #self.table.setRowCount(1)  # 初始有一行
 
         self.add_row()  # 添加初始行
@@ -60,10 +60,13 @@ class MainWindow(QWidget):
 
         # 时点列
         time_point_combo = QComboBox()
-        for i in range(1, 6):
+        for i in range(0, 6):
             time_point_combo.addItem(str(i))
         self.table.setCellWidget(row_index, 1, time_point_combo)
-
+        # 延时列
+        timed_input = QTableWidgetItem()
+        timed_input.setData(Qt.EditRole, 0.0)
+        self.table.setItem(row_index, 4, timed_input)
         # 状态列
         
         status_layout = QWidget()
@@ -95,25 +98,29 @@ class MainWindow(QWidget):
         self.table.setColumnWidth(2, 300)
     def output_content(self):
         content = []
+        td = {}
         for row in range(self.table.rowCount()):
             time = self.table.item(row, 0).text().replace("初始状态","126")
             time_point = self.table.cellWidget(row, 1).currentText()
+            value = float(self.table.item(row, 4).text())  # 假设第五列是文本格式，可以转换为浮点数
+            if value != 0:
+                td[row] = value # 行号从1开始，值为非零的内容
             status = []
             status_layout = self.table.cellWidget(row, 2)
             for checkbox in status_layout.findChildren(QCheckBox):
                 status.append(checkbox.isChecked())
             content.append((time, time_point,status))
-        return content
+        return content,td
     
-    def usecontent(self,content):
+    def usecontent(self,content,td={}):
         output_text = []
         for i, (t, tp, s) in enumerate(content):
             if i == 0 :
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s))
+                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s,td.get(i,0.03)))
             else:
                 prev_status = content[i-1][2]
                 status_diff =  [x != y for x, y in zip(s, prev_status)]
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff))
+                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff,td.get(i,0.03)))
         
         input_text = self.input_box.text()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
@@ -123,19 +130,19 @@ class MainWindow(QWidget):
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
     def gen1(self):
-        try:
-            c=self.output_content()
-            self.usecontent(c)
-        except Exception as e:
+        if 1:#try:
+            c,t=self.output_content()
+            self.usecontent(c,t)
+        '''except Exception as e:
             msg = QMessageBox()
             msg.setText(f'发生错误{e}')
             msg.setIcon(QMessageBox.Information)
-            msg.exec_()
+            msg.exec_()'''
         
     def show_popup(self):
         # 创建自定义的对话框
-        c=self.output_content()
-        code=sharecode.to_share(c)
+        c,t=self.output_content()
+        code=sharecode.to_share(c,t)
         dialog = QDialog(self)
         dialog.setWindowTitle('分享码')
         text_edit = QTextEdit(dialog)
@@ -151,19 +158,19 @@ class MainWindow(QWidget):
         dialog.exec_()
     def gen2(self):
         a=self.share_box.text()
-        try:
+        if 1:#try:
             if ":" in a:
                 a=a.split(":")
-                c=sharecode.from_share(a[1])
+                c,t=sharecode.from_share(a[1])
                 self.input_box.setText(a[0])
             else:
-                c=sharecode.from_share(a)
-            self.usecontent(c)
-        except Exception as e:
+                c,t=sharecode.from_share(a)
+            self.usecontent(c,t)
+        '''except Exception as e:
             msg = QMessageBox()
             msg.setText(f'分享码有误或使用方法错误{e}')
             msg.setIcon(QMessageBox.Information)
-            msg.exec_()
+            msg.exec_()'''
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_win = MainWindow()
