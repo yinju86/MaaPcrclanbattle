@@ -52,7 +52,7 @@ def generation(stepname,stepfile):
     "threshold": [
     0.95
     ],
-    "action": "Click","pre_delay":500,"post_delay":15,"rate_limit":30,
+    "action": "Click","pre_delay":200,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}tc_0"]}},
     "{stepname}autoo": {{
     "recognition": "TemplateMatch",

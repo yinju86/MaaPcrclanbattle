@@ -116,14 +116,15 @@ class MainWindow(QWidget):
         output_text = []
         for i, (t, tp, s) in enumerate(content):
             if i == 0 :
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s,td.get(i,0.03)))
+                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s,td.get(i,0.015)))
             else:
                 prev_status = content[i-1][2]
                 status_diff =  [x != y for x, y in zip(s, prev_status)]
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff,td.get(i,0.03)))
-        
+                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff,td.get(i,0.015)))
         input_text = self.input_box.text()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
+        code=sharecode.to_share(content,td)
+        self.autosave(f"{stepname}:{code}")
         scriptgeneration.generation(stepname=stepname,stepfile=output_text)
         msg = QMessageBox()
         msg.setText(f'已生成脚本 "{stepname}"')
@@ -171,6 +172,12 @@ class MainWindow(QWidget):
             msg.setText(f'分享码有误或使用方法错误{e}')
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
+    def autosave(content,self):
+    # 使用 'a' 模式打开文件，追加写入
+        with open("自动保存的分享码.txt", 'a', encoding='utf-8') as file:
+        # 写入字符串到文件末尾，并换行
+            file.write(content + '\n')
+    
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_win = MainWindow()
