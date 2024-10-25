@@ -172,7 +172,7 @@ class MainWindow(QWidget):
             msg.setText(f'分享码有误或使用方法错误{e}')
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
-    def autosave(content,self):
+    def autosave(self,content):
     # 使用 'a' 模式打开文件，追加写入
         with open("自动保存的分享码.txt", 'a', encoding='utf-8') as file:
         # 写入字符串到文件末尾，并换行
