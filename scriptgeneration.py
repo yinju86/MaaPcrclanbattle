@@ -24,7 +24,7 @@ def generation(stepname,stepfile):
     "template": [
     "start0.png"
     ],
-    "action": "Click","rate_limit":30,"timeout":500000,"next": [
+    "action": "Click","pre_delay":100,"post_delay":15,"rate_limit":30,"timeout":500000,"next": [
     "{stepname}start2","{stepname}autoc","{stepname}autoo"
     ]
     }},"{stepname}start2": {{
@@ -35,7 +35,7 @@ def generation(stepname,stepfile):
     "template": [
     "start2.png"
     ],
-    "action": "Click","rate_limit":30,"timeout":500000,"next": [
+    "action": "Click","pre_delay":100,"post_delay":15,"rate_limit":30,"timeout":500000,"next": [
     "{stepname}autoc","{stepname}autoo"
     ]
     }},"{stepname}autoc": {{
@@ -85,7 +85,7 @@ def generation(stepname,stepfile):
     ],
     "expected": [
     "{t}"
-    ],"rate_limit":30,"timeout":500000,"next": [
+    ],"pre_delay":15,"rate_limit":30,"timeout":500000,"next": [
     "{stepname}tpc_{i}"
     ],
     "action": "DoNothing"
@@ -131,7 +131,7 @@ def generation(stepname,stepfile):
     "action": "DoNothing",
     "template": [
         "aub.png"
-    ],"rate_limit":500,"timeout":500000,"next": [
+    ],"pre_delay":50,"post_delay":50,"rate_limit":100,"timeout":500000,"next": [
     "{stepname}c1_{i}","{stepname}c2_{i}","{stepname}c3_{i}","{stepname}c4_{i}","{stepname}c5_{i}","{stepname}c6_{i}","{stepname}tc_{i+1}"
     ]
     }},"{stepname}c1_{i}": {{
