@@ -33,14 +33,14 @@ class MainWindow(QWidget):
         self.input_layout.addWidget(self.label)
         self.input_layout.addWidget(self.input_box)
         self.output_button = QPushButton('生成脚本')
-        self.output_button.clicked.connect(self.gen1)
+        self.output_button.clicked.connect(self.genbymanual)
         self.share_layout = QHBoxLayout()
         self.label2 = QLabel("分享码：")
         self.share_box = QLineEdit()
         self.share_button= QPushButton('一键分享')
         self.share_button.clicked.connect(self.show_popup)
         self.sharein_button= QPushButton('读取分享')
-        self.sharein_button.clicked.connect(self.gen2)
+        self.sharein_button.clicked.connect(self.genbyshare)
         self.share_layout.addWidget(self.label2)
         self.share_layout.addWidget(self.share_box)
         self.share_layout.addWidget(self.sharein_button)
@@ -102,7 +102,7 @@ class MainWindow(QWidget):
         for row in range(self.table.rowCount()):
             time = self.table.item(row, 0).text().replace("初始状态","126")
             time_point = self.table.cellWidget(row, 1).currentText()
-            value = float(self.table.item(row, 4).text())  # 假设第五列是文本格式，可以转换为浮点数
+            value = float(self.table.item(row, 4).text())  
             if value != 0:
                 td[row] = value # 行号从1开始，值为非零的内容
             status = []
@@ -130,7 +130,7 @@ class MainWindow(QWidget):
         msg.setText(f'已生成脚本 "{stepname}"')
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
-    def gen1(self):
+    def genbymanual(self):
         try:
             c,t=self.output_content()
             self.usecontent(c,t)
@@ -139,7 +139,18 @@ class MainWindow(QWidget):
             msg.setText(f'发生错误{e}')
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
-        
+    def set_input(self, content, td):
+        self.table.setRowCount(0)  # Clear existing rows
+        for index, (time, time_point, status) in enumerate(content):
+            self.add_row()  # Add a new row
+            self.table.item(index, 0).setText(time)  # Set time
+            self.table.cellWidget(index, 1).setCurrentText(time_point)  # Set time point
+            timed_input = self.table.item(index, 4)
+            timed_input.setText(str(td.get(index, 0.0)))  # Set delay, default to 0.0 if not in td
+            # Set status checkboxes
+            status_layout = self.table.cellWidget(index, 2)
+            for i, checkbox in enumerate(status_layout.findChildren(QCheckBox)):
+                checkbox.setChecked(status[i])  # Set checkbox state
     def show_popup(self):
         # 创建自定义的对话框
         c,t=self.output_content()
@@ -157,15 +168,17 @@ class MainWindow(QWidget):
         dialog.setLayout(layout)
         # 显示对话框
         dialog.exec_()
-    def gen2(self):
+    def genbyshare(self):
         a=self.share_box.text()
         try:
             if ":" in a:
                 a=a.split(":")
                 c,t=sharecode.from_share(a[1])
                 self.input_box.setText(a[0])
+                self.set_input(c,t)
             else:
                 c,t=sharecode.from_share(a)
+                self.set_input(c,t)
             self.usecontent(c,t)
         except Exception as e:
             msg = QMessageBox()
