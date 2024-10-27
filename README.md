@@ -11,23 +11,23 @@
 
 本仓库为基于MaaFramework构建的Pcr自动set轴脚本生成器,可实现自动打开关set轴 [MaaPcrclanbattle](https://github.com/MaaXYZ/MaaFramework) 
 
-基于图像识别,但是 
-# 用就别怕,怕就别用
-
+# 基于图像识别,但是怕就别用
+# 仅支持1280*720分辨率
 # 交流QQ群532774716
 
 
 ## 使用方法
 ### [视频演示](https://www.bilibili.com/video/BV1uiyMY4EnJ)
 ### 0. 下载 [Release 包](https://github.com/yinju86/MaaPcrclanbattle/releases)
-### 1. 运行generator.exe
+### 1. 运行 generator.exe
 ### 2. 输入轴,,也可以一键导入分享码
-![轴输入界面](https://github.com/yinju86/imagefolder/blob/main/input.png)
+![轴输入界面](https://free2.yunpng.top/2024/10/27/671db3731652f.png)
+![轴输入界面新版](https://free2.yunpng.top/2024/10/27/671db390377ba.png)
+### 3.进入预备挑战界面,需要提前自行选人(先选好进模拟战再退出)
+![模拟器选人界面](https://free2.yunpng.top/2024/10/27/671db3adc1052.png)
 
-### 3.进入预备挑战界面,需要自行选人,仅支持1280*720分辨率
-![模拟器选人界面](https://github.com/yinju86/imagefolder/blob/main/wait.png)
-
-### 4.运行MaaPiCli.exe,执行脚本
+### 4.运行MFAWPF.exe,执行脚本
+![mfa](https://free2.yunpng.top/2024/10/27/671db4c822a27.png)
 
 ## 注意事项
 
@@ -35,7 +35,7 @@
 
 ### 2. 最好设置二倍速,不支持四倍速
 
-### 3. 不支持bossub后
+### 3. 不支持bossub后,除了纯set轴都建议不要尝试
 
 ### 4. 虽然设定了最后自己按暂停,但是还是有滑刀风险
 
@@ -49,9 +49,9 @@
 ### boss ub识别
 ### 多服务器支持
 ### 探索最佳截图间隔,减少性能消耗
-### ~~MaaPicli GUI~~(不做了,有需要自行参考[MFAWPF](https://github.com/SweetSmellFox/MFAWPF) 将generator.exe也复制到MFA文件夹中使用)
+
 
 ## 鸣谢
 
-本项目由 **[MaaFramework](https://github.com/MaaXYZ/MaaFramework)** 强力驱动！
+本项目由 **[MaaFramework](https://github.com/MaaXYZ/MaaFramework)** **[MFAWPF](https://github.com/SweetSmellFox/MFAWPF)** 强力驱动！
 
