@@ -1,6 +1,7 @@
 import sys
 from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QFileDialog, QMessageBox,QHBoxLayout,QDialog,QTextEdit
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIntValidator
 import random
 import scriptgeneration
 import sharecode
@@ -32,6 +33,16 @@ class MainWindow(QWidget):
         self.input_box = QLineEdit()
         self.input_layout.addWidget(self.label)
         self.input_layout.addWidget(self.input_box)
+
+        # 添加余刀剩余时间标签和输入框
+        self.remaining_time_label = QLabel("余刀剩余时间：")
+        self.remaining_time_input = QLineEdit()
+        self.remaining_time_input.setValidator(QIntValidator(21, 130))  # 限制输入范围为21-130
+        self.remaining_time_input.setText("130") 
+        self.remaining_time_input.setFixedWidth(50)  # 设置输入框的固定宽度
+        self.input_layout.addWidget(self.remaining_time_label)
+        self.input_layout.addWidget(self.remaining_time_input)
+
         self.output_button = QPushButton('生成脚本')
         self.output_button.clicked.connect(self.genbymanual)
         self.share_layout = QHBoxLayout()
@@ -50,67 +61,120 @@ class MainWindow(QWidget):
         self.layout.addWidget(self.share_button)
         self.layout.addLayout(self.share_layout)
         self.setLayout(self.layout)
-    def add_row(self):
-        row_index = self.table.rowCount()
-        self.table.insertRow(row_index)
+
+    def add_row(self, row_index=None):
+        if row_index is None:
+            row_index = self.table.rowCount() - 1  # 默认在最后一行下面添加
+
+        self.table.insertRow(row_index + 1)
+
         # 时间列
         time_input = QTableWidgetItem()
         time_input.setData(Qt.EditRole, '001')
-        self.table.setItem(row_index, 0, time_input)
+        self.table.setItem(row_index + 1, 0, time_input)
 
         # 时点列
         time_point_combo = QComboBox()
         for i in range(0, 6):
             time_point_combo.addItem(str(i))
-        self.table.setCellWidget(row_index, 1, time_point_combo)
+        self.table.setCellWidget(row_index + 1, 1, time_point_combo)
+
         # 延时列
         timed_input = QTableWidgetItem()
         timed_input.setData(Qt.EditRole, 0.0)
-        self.table.setItem(row_index, 4, timed_input)
+        self.table.setItem(row_index + 1, 4, timed_input)
+
         # 状态列
-        
         status_layout = QWidget()
         status_layout_layout = QHBoxLayout(status_layout)
         status_layout_layout.setContentsMargins(0, 0, 0, 0)
         status_layout_layout.setSpacing(0)
         status_checkboxes = []
         for i in range(1, 6):
-            checkbox = QCheckBox(str(i)+"    ")
+            checkbox = QCheckBox(str(i) + "    ")
             status_layout_layout.addWidget(checkbox)
             status_checkboxes.append(checkbox)
         checkbox = QCheckBox('A')
         status_layout_layout.addWidget(checkbox)
         status_checkboxes.append(checkbox)
-        self.table.setCellWidget(row_index, 2, status_layout)
-        
-        if row_index > 0:
-            previous_row_status_layout = self.table.cellWidget(row_index - 1, 2)
-            previous_row_status_layout_layout = previous_row_status_layout.layout()
-            for i in range(previous_row_status_layout_layout.count()):
-                previous_checkbox = previous_row_status_layout_layout.itemAt(i).widget()
-                current_checkbox = status_checkboxes[i]
-                current_checkbox.setChecked(previous_checkbox.isChecked())
+        self.table.setCellWidget(row_index + 1, 2, status_layout)
+
+        # 复制被点击行的状态设定
+        if row_index >= 0:
+            previous_row_status_layout = self.table.cellWidget(row_index, 2)
+            if previous_row_status_layout is not None:
+                previous_row_status_layout_layout = previous_row_status_layout.layout()
+                for i in range(previous_row_status_layout_layout.count()):
+                    previous_checkbox = previous_row_status_layout_layout.itemAt(i).widget()
+                    current_checkbox = status_checkboxes[i]
+                    current_checkbox.setChecked(previous_checkbox.isChecked())
 
         # 操作列
+        operation_layout = QWidget()
+        operation_layout_layout = QHBoxLayout(operation_layout)
+        operation_layout_layout.setContentsMargins(0, 0, 0, 0)
+        operation_layout_layout.setSpacing(0)
+
         add_button = QPushButton('添加')
-        add_button.clicked.connect(self.add_row)
-        self.table.setCellWidget(row_index, 3, add_button)
+        add_button.clicked.connect(lambda: self.add_row(row_index + 1))
+        operation_layout_layout.addWidget(add_button)
+
+        delete_button = QPushButton('删除')
+        delete_button.clicked.connect(lambda: self.delete_row(row_index + 1))
+        operation_layout_layout.addWidget(delete_button)
+
+        self.table.setCellWidget(row_index + 1, 3, operation_layout)
         self.table.setColumnWidth(2, 300)
+
+    def delete_row(self, row_index):
+        if row_index > 0:  # 确保第一行不可删除
+            self.table.removeRow(row_index)
+
     def output_content(self):
         content = []
         td = {}
+        
+        # 读取输入框的值并计算差值
+        remaining_time = int(self.remaining_time_input.text())
+        time_difference = 130 - remaining_time
+
         for row in range(self.table.rowCount()):
-            time = self.table.item(row, 0).text().replace("初始状态","126")
+            time_item = self.table.item(row, 0)
+            time = time_item.text().replace("初始状态", "124")
+            
+            # 将时间值转换为秒数
+            time_value = int(time)
+            if 1 <= time_value <= 59:
+                time_in_seconds = time_value
+            elif 100 <= time_value <= 130:
+                time_in_seconds = (time_value - 100) + 60
+            
+            # 减去差值
+            adjusted_time_in_seconds = time_in_seconds - time_difference
+            
+            # 如果调整后的时间小于1秒，则跳过该行
+            if adjusted_time_in_seconds < 1:
+                continue
+            
+            # 将秒数转换回时间格式
+            if adjusted_time_in_seconds <= 59:
+                adjusted_time = f"{adjusted_time_in_seconds:03}"
+            else:
+                adjusted_time = str(adjusted_time_in_seconds + 40)
+
+
+
             time_point = self.table.cellWidget(row, 1).currentText()
-            value = float(self.table.item(row, 4).text())  
+            value = float(self.table.item(row, 4).text())
             if value != 0:
-                td[row] = value # 行号从1开始，值为非零的内容
+                td[row] = value  # 行号从1开始，值为非零的内容
             status = []
             status_layout = self.table.cellWidget(row, 2)
             for checkbox in status_layout.findChildren(QCheckBox):
                 status.append(checkbox.isChecked())
-            content.append((time, time_point,status))
-        return content,td
+            content.append((adjusted_time, time_point, status))
+        
+        return content, td
     
     def usecontent(self,content,td={}):
         output_text = []
@@ -188,7 +252,7 @@ class MainWindow(QWidget):
     def autosave(self,content):
     # 使用 'a' 模式打开文件，追加写入
         with open("自动保存的分享码.txt", 'a', encoding='utf-8') as file:
-        # 写入字符串到文件末尾，并换行
+        # 写入字符串到文件尾，并换行
             file.write(content + '\n')
     
 if __name__ == '__main__':
