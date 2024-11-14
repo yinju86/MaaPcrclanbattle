@@ -75,6 +75,10 @@ def generation(stepname,stepfile):
     '''
     for i in range(len(stepfile)):
         t,tp,s,tdelay=stepfile[i]
+        if i<len(stepfile)-1:
+            t1=stepfile[i+1][0]
+        else:
+            t1='0:02'
         output_s= output_s+f'''"{stepname}tc_{i}": {{
     "recognition": "OCR",
     "post_delay":{tdelay*1000},
@@ -85,7 +89,7 @@ def generation(stepname,stepfile):
     27
     ],
     "focus":true,
-    "focus_tip":"等待识别{t}",
+    "focus_tip":"已识别{t}",
     "expected": [
     "{t}"
     ],"pre_delay":15,"rate_limit":30,"timeout":500000,"next": [
@@ -132,7 +136,7 @@ def generation(stepname,stepfile):
 
     ],
     "focus":true,
-    "focus_tip":"点击后状态为{sss[i]}",
+    "focus_tip":["预计点击后状态为{sss[i]}","等待识别{t1}"],
     "action": "DoNothing",
     "template": [
         "aub.png"
@@ -263,6 +267,6 @@ def restore_status(stepfile):
             result.append(list(current_status))
     
     # 将布尔值列表转换为O/X字符串，在第5位后添加' auto'
-    return [''.join('O' if x else 'X' for x in status[:5]) + ' auto' + ('O' if status[5] else 'X') for status in result]
+    return [''.join('O' if x else 'X' for x in status[:5]) + ' auto' + ('开' if status[5] else '关') for status in result]
 
     
