@@ -207,7 +207,7 @@ def generation(stepname,stepfile):
     ],"rate_limit":30,"timeout":500000,"next": ["{stepname}tc_{i+1}"]
     }},
     '''
-    output_s=output_s.replace(f'",{stepname}tc_{len(stepfile)}"',f'",{stepname}p"').replace(f'''"timeout":500000,"next": ["{stepname}tc_{len(stepfile)}"]
+    output_s=output_s.replace(f',"{stepname}tc_{len(stepfile)}"',f',"{stepname}p"').replace(f'''"timeout":500000,"next": ["{stepname}tc_{len(stepfile)}"]
     }},''',f'''"timeout":500000,"next": ["{stepname}p"]
     }},"{stepname}p":{{"recognition": "OCR",
     "roi": [
