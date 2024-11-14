@@ -2,6 +2,7 @@ import json
 
 
 def generation(stepname,stepfile):
+    sss=restore_status(stepfile)
     ubflag=[310,470,630,790,950]
     output_s=f'''{{
     "{stepname}start": {{
@@ -83,6 +84,8 @@ def generation(stepname,stepfile):
     48,
     27
     ],
+    "focus":true,
+    "focus_tip":"等待识别{t}",
     "expected": [
     "{t}"
     ],"pre_delay":15,"rate_limit":30,"timeout":500000,"next": [
@@ -128,6 +131,8 @@ def generation(stepname,stepfile):
         20
 
     ],
+    "focus":true,
+    "focus_tip":"点击后状态为{sss[i]}",
     "action": "DoNothing",
     "template": [
         "aub.png"
@@ -202,7 +207,7 @@ def generation(stepname,stepfile):
     ],"rate_limit":30,"timeout":500000,"next": ["{stepname}tc_{i+1}"]
     }},
     '''
-    output_s=output_s.replace(f',"{stepname}tc_{len(stepfile)}"',f',"{stepname}p"').replace(f'''"timeout":500000,"next": ["{stepname}tc_{len(stepfile)}"]
+    output_s=output_s.replace(f'",{stepname}tc_{len(stepfile)}"',f'",{stepname}p"').replace(f'''"timeout":500000,"next": ["{stepname}tc_{len(stepfile)}"]
     }},''',f'''"timeout":500000,"next": ["{stepname}p"]
     }},"{stepname}p":{{"recognition": "OCR",
     "roi": [
@@ -237,5 +242,27 @@ def generation(stepname,stepfile):
 
     with open('interface.json', 'w', encoding='utf-8') as json_file:
         json.dump(data, json_file, indent=4, ensure_ascii=False)
+
+    
+
+def restore_status(stepfile):
+    """根据stepfile还原原始status列表，输出O/X字符串"""
+    result = []
+    current_status = [False] * 6  # 初始状态全为False
+    
+    for _, _, status_diff, _ in stepfile:
+        # 第一行直接使用status_diff作为状态
+        if not result:
+            result.append(status_diff)
+            current_status = list(status_diff)
+        else:
+            # 根据status_diff更新current_status
+            for i in range(len(current_status)):
+                if status_diff[i]:
+                    current_status[i] = not current_status[i]
+            result.append(list(current_status))
+    
+    # 将布尔值列表转换为O/X字符串，在第5位后添加' auto'
+    return [''.join('O' if x else 'X' for x in status[:5]) + ' auto' + ('O' if status[5] else 'X') for status in result]
 
     
