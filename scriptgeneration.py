@@ -1,4 +1,5 @@
 import json
+import os
 
 
 def generation(stepname,stepfile):
@@ -230,6 +231,9 @@ def generation(stepname,stepfile):
     }}}}''').replace('\n', '').replace('False', 'false').replace('True', 'true').replace("\t", "").strip()
     data = json.loads(output_s)
 
+    # 在保存文件前创建目录
+    os.makedirs('resource/pipeline', exist_ok=True)
+    
     # 保存为 JSON 文件
     with open(f'resource/pipeline/{stepname}.json', 'w',encoding='utf-8') as json_file:
         json.dump(data, json_file, indent=4, ensure_ascii=False)

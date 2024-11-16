@@ -14,13 +14,6 @@
         }
     ],
     "task": [
-        {
-            "name": "测试轴",
-            "entry": "teststart"
-        },
-        {
-            "name": "E5物理",
-            "entry": "E5物理start"
-        }
+       
     ]
 }
