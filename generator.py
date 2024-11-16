@@ -1,10 +1,23 @@
 import sys
-from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QFileDialog, QMessageBox,QHBoxLayout,QDialog,QTextEdit
+from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QMessageBox,QHBoxLayout,QDialog,QTextEdit, QMenuBar, QMenu
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
 import random
 import scriptgeneration
 import sharecode
+import json
+from pathlib import Path
+import webbrowser
+
+def get_version():
+    try:
+        install_path = Path(__file__).parent / "install"
+        with open(install_path / "interface.json", "r", encoding="utf-8") as f:
+            interface = json.load(f)
+        return interface.get("version", "unknown")
+    except:
+        return "unknown"
+
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -15,7 +28,26 @@ class MainWindow(QWidget):
         self.setWindowTitle('轴输入窗口')
         self.setGeometry(100, 100, 1000, 600)
 
+        # 添加菜单栏
+        self.menu_bar = QMenuBar(self)
+        
+        # 添加脚本管理菜单
+        script_menu = QMenu('脚本管理', self)
+        self.menu_bar.addMenu(script_menu)
+        
+        manage_action = script_menu.addAction('管理脚本')
+        manage_action.triggered.connect(self.show_script_manager)
+        
+        help_menu = QMenu('帮助', self)
+        self.menu_bar.addMenu(help_menu)
+        
+        readme_action = help_menu.addAction('使用说明')
+        readme_action.triggered.connect(self.open_readme)
+        about_action = help_menu.addAction('关于')
+        about_action.triggered.connect(self.show_about)
+
         self.layout = QVBoxLayout()
+        self.layout.setMenuBar(self.menu_bar)  # 将菜单栏添加到布局中
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)  # 时间、时点、状态、操作
@@ -200,7 +232,7 @@ class MainWindow(QWidget):
             self.usecontent(c,t)
         except Exception as e:
             msg = QMessageBox()
-            msg.setText(f'发生错误{e}')
+            msg.setText(f'发生错{e}')
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
     def set_input(self, content, td):
@@ -221,16 +253,25 @@ class MainWindow(QWidget):
         code=sharecode.to_share(c,t)
         dialog = QDialog(self)
         dialog.setWindowTitle('分享码')
+        
+        # 创建垂直布局
+        layout = QVBoxLayout()
+        
+        # 分享码文本框
         text_edit = QTextEdit(dialog)
         text_edit.setReadOnly(True)  # 设置为只读模式，防止用户编辑
         input_text = self.input_box.text()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
         text_edit.setText(f"{stepname}:{code}")  # 设置要显示的文本
-        # 设置布局
-        layout = QVBoxLayout()
         layout.addWidget(text_edit)
+        
+        # 添加共享网址提示
+        url_label = QLabel('共享网址：<a href="https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz">https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz</a>')
+        url_label.setOpenExternalLinks(True)  # 允许点击链接
+        url_label.setTextFormat(Qt.RichText)  # 使用富文本格式以支持链接
+        layout.addWidget(url_label)
+        
         dialog.setLayout(layout)
-        # 显示对话框
         dialog.exec_()
     def genbyshare(self):
         a=self.share_box.text()
@@ -254,6 +295,129 @@ class MainWindow(QWidget):
         with open("自动保存的分享码.txt", 'a', encoding='utf-8') as file:
         # 写入字符串到文件尾，并换行
             file.write(content + '\n')
+    
+    def show_about(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle('关于')
+        dialog.setFixedSize(400, 200)  # 设置固定窗口大小
+        layout = QVBoxLayout()
+        
+        # 使用QTextEdit替代QLabel以支持文本复制
+        content = QTextEdit()
+        content.setReadOnly(True)  # 设置只读
+        content.setHtml(
+            f'<div style="text-align: center;">'
+            f'<h2>PCR会战SET轴脚本生成工具</h2>'
+            f'<p>版本号: {get_version()}</p>'
+            f'<p>Github: <a href="https://github.com/yinju86/MaaPcrclanbattle">https://github.com/yinju86/MaaPcrclanbattle</a></p>'
+            f'<p>QQ群: 532774716</p>'
+            f'</div>'
+        )
+        content.setStyleSheet("""
+            QTextEdit {
+                background-color: transparent;
+                border: none;
+            }
+            QScrollBar {
+                width: 0px;
+                height: 0px;
+            }
+        """)  # 设置透明背景并隐藏滚动条
+        content.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁用垂直滚动条
+        content.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)  # 禁用水平滚动条
+        layout.addWidget(content)
+        
+        # 添加确定按钮并居中
+        button_layout = QHBoxLayout()
+        ok_button = QPushButton("确定")
+        ok_button.setFixedWidth(100)  # 设置按钮宽度
+        ok_button.clicked.connect(dialog.accept)
+        button_layout.addStretch()
+        button_layout.addWidget(ok_button)
+        button_layout.addStretch()
+        
+        layout.addLayout(button_layout)
+        dialog.setLayout(layout)
+        dialog.exec_()
+
+    def open_readme(self):
+        try:
+            readme_path = Path(__file__).parent / "README.md"
+            if readme_path.exists():
+                webbrowser.open(str(readme_path))
+            else:
+                msg = QMessageBox()
+                msg.setText('未找到README文件')
+                msg.setIcon(QMessageBox.Warning)
+                msg.exec_()
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setText(f'打开README时发生错误：{str(e)}')
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec_()
+
+    def show_script_manager(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle('脚本管理')
+        dialog.setFixedSize(400, 500)
+        layout = QVBoxLayout()
+        
+        # 创建脚本列表
+        script_list = QTableWidget()
+        script_list.setColumnCount(2)
+        script_list.setHorizontalHeaderLabels(['脚本名称', '操作'])
+        script_list.horizontalHeader().setStretchLastSection(True)
+        layout.addWidget(script_list)
+        
+        try:
+            # 读取 interface.json
+            with open('interface.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                tasks = data.get('task', [])
+                
+                script_list.setRowCount(len(tasks))
+                for row, task in enumerate(tasks):
+                    name = task.get('name', '')
+                    script_list.setItem(row, 0, QTableWidgetItem(name))
+                    
+                    # 添加删除按钮
+                    delete_btn = QPushButton('删除')
+                    delete_btn.clicked.connect(lambda checked, n=name: self.delete_script(n, script_list))
+                    script_list.setCellWidget(row, 1, delete_btn)
+        except Exception as e:
+            QMessageBox.warning(dialog, '错误', f'读取脚本列表失败：{str(e)}')
+        
+        dialog.setLayout(layout)
+        dialog.exec_()
+
+    def delete_script(self, script_name, script_list):
+        try:
+            # 删除 pipeline 文件
+            pipeline_path = Path('resource/pipeline') / f'{script_name}.json'
+            if pipeline_path.exists():
+                pipeline_path.unlink()
+            
+            # 更新 interface.json
+            with open('interface.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            
+            # 过滤掉要删除的脚本
+            data['task'] = [task for task in data['task'] if task.get('name') != script_name]
+            
+            with open('interface.json', 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+            
+            # 刷新列表
+            for row in range(script_list.rowCount()):
+                if script_list.item(row, 0).text() == script_name:
+                    script_list.removeRow(row)
+                    break
+                
+            QMessageBox.information(self, '成功', f'已删除脚本：{script_name}')
+        except Exception as e:
+            QMessageBox.warning(self, '错误', f'删除脚本失败：{str(e)}')
+
+
     
 if __name__ == '__main__':
     app = QApplication(sys.argv)

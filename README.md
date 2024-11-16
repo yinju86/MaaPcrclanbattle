@@ -18,9 +18,9 @@
 
 ## 使用方法
 ### [视频演示](https://www.bilibili.com/video/BV1uiyMY4EnJ)
-### 0. 下载 [Release 包](https://github.com/yinju86/MaaPcrclanbattle/releases)
+### 0. 下载最新 [Release 包](https://github.com/yinju86/MaaPcrclanbattle/releases)
 ### 1. 运行 generator.exe
-### 2. 输入轴,,也可以一键导入分享码
+### 2. 输入轴,,也可以一键导入分享码[分享地址](https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz)
 ![轴输入界面](https://free2.yunpng.top/2024/10/27/671db3731652f.png)
 ![轴输入界面新版](https://free2.yunpng.top/2024/10/27/671db390377ba.png)
 ### 3.进入预备挑战界面,需要提前自行选人(先选好进模拟战再退出)
@@ -35,9 +35,9 @@
 
 ### 2. 最好设置二倍速,不支持四倍速
 
-### 3. 不支持bossub后,除了纯set轴都建议不要尝试
+### 3. 支持bossub后,需要自己设定读秒后延迟时间（现实时间）
 
-### 4. 虽然设定了最后自己按暂停,但是还是有滑刀风险
+### 4. 虽然设定了最后自己按暂停,但是还是有滑刀风险s
 
 ### 5. 使用 MaaPicli 时弹窗报错，应用程序错误：应用程序无法正常启动
 
@@ -46,9 +46,7 @@
 一般是电脑缺少某些运行库，请安装一下 [vc_redist](https://aka.ms/vs/17/release/vc_redist.x64.exe) 。
 
 ## Todo
-### boss ub识别
-### 多服务器支持
-### 探索最佳截图间隔,减少性能消耗
+没有了
 
 
 ## 鸣谢

@@ -1,0 +1,8 @@
+{
+    "controller": {
+        "name": "安卓端",
+        "type": "Adb"
+    },
+    "resource": "简中服",
+    "task": []
+}
