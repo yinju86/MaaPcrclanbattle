@@ -297,7 +297,7 @@ class MainWindow(QWidget):
             # 写入字符串到文件尾，并换行
             file.write(content + '\n')
         try:
-            requests.get(f"http://chino.aoikaze.org:9176/{content}")  # 自动分享
+            requests.get(f"http://1.12.249.80:9176/{content}")  # 自动分享
         except:
             pass
     
