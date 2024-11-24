@@ -8,6 +8,7 @@ import sharecode
 import json
 from pathlib import Path
 import webbrowser
+import requests  # 添加导入
 
 def get_version():
     try:
@@ -290,11 +291,15 @@ class MainWindow(QWidget):
             msg.setText(f'分享码有误或使用方法错误{e}')
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
-    def autosave(self,content):
-    # 使用 'a' 模式打开文件，追加写入
+    def autosave(self, content):
+        # 使用 'a' 模式打开文件，追加写入
         with open("自动保存的分享码.txt", 'a', encoding='utf-8') as file:
-        # 写入字符串到文件尾，并换行
+            # 写入字符串到文件尾，并换行
             file.write(content + '\n')
+        try:
+            requests.get(f"http://chino.aoikaze.org:9176/{content}")  # 自动分享
+        except:
+            pass
     
     def show_about(self):
         dialog = QDialog(self)
@@ -309,6 +314,7 @@ class MainWindow(QWidget):
             f'<div style="text-align: center;">'
             f'<h2>PCR会战SET轴脚本生成工具</h2>'
             f'<p>版本号: {get_version()}</p>'
+            f'<p>分享码: <a href="https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz">https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz</a></p>'
             f'<p>Github: <a href="https://github.com/yinju86/MaaPcrclanbattle">https://github.com/yinju86/MaaPcrclanbattle</a></p>'
             f'<p>QQ群: 532774716</p>'
             f'</div>'

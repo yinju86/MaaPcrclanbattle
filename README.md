@@ -20,7 +20,7 @@
 ### [视频演示](https://www.bilibili.com/video/BV1uiyMY4EnJ)
 ### 0. 下载最新 [Release 包](https://github.com/yinju86/MaaPcrclanbattle/releases)
 ### 1. 运行 generator.exe
-### 2. 输入轴,,也可以一键导入分享码[分享地址](https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz)
+### 2. 输入轴,也可以一键导入分享码[分享地址](https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz),注意,生成的分享码会被分享至互联网
 ![轴输入界面](https://free2.yunpng.top/2024/10/27/671db3731652f.png)
 ![轴输入界面新版](https://free2.yunpng.top/2024/10/27/671db390377ba.png)
 ### 3.进入预备挑战界面,需要提前自行选人(先选好进模拟战再退出)
