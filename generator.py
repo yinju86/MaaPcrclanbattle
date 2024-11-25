@@ -23,8 +23,9 @@ def get_version():
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
+        self.is_setting_input=False
         self.initUI()
-
+        
     def initUI(self):
         self.setWindowTitle('轴输入窗口')
         self.setGeometry(100, 100, 1000, 600)
@@ -99,7 +100,9 @@ class MainWindow(QWidget):
     # 如果没有指定行，从按钮信号中获取行
         
         sender_button = self.sender()  # 获取信号的发出者
-        if sender_button:
+        if self.is_setting_input:
+            button_row_index = self.table.rowCount() - 1
+        elif sender_button:
             button_row_index = self.table.indexAt(sender_button.parent().pos()).row()
             print(button_row_index,"s")
         else:
@@ -249,6 +252,7 @@ class MainWindow(QWidget):
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
     def set_input(self, content, td):
+        self.is_setting_input = True
         self.table.setRowCount(0)  # Clear existing rows
         for index, (time, time_point, status) in enumerate(content):
             self.add_row()  # Add a new row
@@ -260,6 +264,7 @@ class MainWindow(QWidget):
             status_layout = self.table.cellWidget(index, 2)
             for i, checkbox in enumerate(status_layout.findChildren(QCheckBox)):
                 checkbox.setChecked(status[i])  # Set checkbox state
+        self.is_setting_input = False
     def show_popup(self):
         # 创建自定义的对话框
         c,t=self.output_content()
