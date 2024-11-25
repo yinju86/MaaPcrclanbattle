@@ -95,27 +95,33 @@ class MainWindow(QWidget):
         self.layout.addLayout(self.share_layout)
         self.setLayout(self.layout)
 
-    def add_row(self, row_index=None):
-        if row_index is None:
-            row_index = self.table.rowCount() - 1  # 默认在最后一行下面添加
-
-        self.table.insertRow(row_index + 1)
+    def add_row(self, button_row_index=None):
+    # 如果没有指定行，从按钮信号中获取行
+        
+        sender_button = self.sender()  # 获取信号的发出者
+        if sender_button:
+            button_row_index = self.table.indexAt(sender_button.parent().pos()).row()
+            print(button_row_index,"s")
+        else:
+            button_row_index = self.table.rowCount() - 1  # 默认最后一行
+            print(button_row_index)
+        self.table.insertRow(button_row_index + 1)
 
         # 时间列
         time_input = QTableWidgetItem()
         time_input.setData(Qt.EditRole, '001')
-        self.table.setItem(row_index + 1, 0, time_input)
+        self.table.setItem(button_row_index + 1, 0, time_input)
 
         # 时点列
         time_point_combo = QComboBox()
         for i in range(0, 6):
             time_point_combo.addItem(str(i))
-        self.table.setCellWidget(row_index + 1, 1, time_point_combo)
+        self.table.setCellWidget(button_row_index + 1, 1, time_point_combo)
 
         # 延时列
         timed_input = QTableWidgetItem()
         timed_input.setData(Qt.EditRole, 0.0)
-        self.table.setItem(row_index + 1, 4, timed_input)
+        self.table.setItem(button_row_index + 1, 4, timed_input)
 
         # 状态列
         status_layout = QWidget()
@@ -130,11 +136,11 @@ class MainWindow(QWidget):
         checkbox = QCheckBox('A')
         status_layout_layout.addWidget(checkbox)
         status_checkboxes.append(checkbox)
-        self.table.setCellWidget(row_index + 1, 2, status_layout)
+        self.table.setCellWidget(button_row_index + 1, 2, status_layout)
 
         # 复制被点击行的状态设定
-        if row_index >= 0:
-            previous_row_status_layout = self.table.cellWidget(row_index, 2)
+        if button_row_index >= 0:
+            previous_row_status_layout = self.table.cellWidget(button_row_index, 2)
             if previous_row_status_layout is not None:
                 previous_row_status_layout_layout = previous_row_status_layout.layout()
                 for i in range(previous_row_status_layout_layout.count()):
@@ -149,19 +155,23 @@ class MainWindow(QWidget):
         operation_layout_layout.setSpacing(0)
 
         add_button = QPushButton('添加')
-        add_button.clicked.connect(lambda: self.add_row(row_index + 1))
+        add_button.clicked.connect(self.add_row)  # 无需传递索引，动态获取
         operation_layout_layout.addWidget(add_button)
 
         delete_button = QPushButton('删除')
-        delete_button.clicked.connect(lambda: self.delete_row(row_index + 1))
+        delete_button.clicked.connect(self.delete_row)  # 无需传递索引，动态获取
         operation_layout_layout.addWidget(delete_button)
 
-        self.table.setCellWidget(row_index + 1, 3, operation_layout)
+        self.table.setCellWidget(button_row_index + 1, 3, operation_layout)
         self.table.setColumnWidth(2, 300)
 
-    def delete_row(self, row_index):
-        if row_index > 0:  # 确保第一行不可删除
-            self.table.removeRow(row_index)
+    def delete_row(self):
+        sender_button = self.sender()  # 获取信号的发出者
+        if sender_button:
+            button_row_index = self.table.indexAt(sender_button.parent().pos()).row()
+            if button_row_index > 0:  # 确保第一行不可删除
+                self.table.removeRow(button_row_index)
+
 
     def output_content(self):
         content = []
@@ -170,6 +180,8 @@ class MainWindow(QWidget):
         # 读取输入框的值并计算差值
         remaining_time = int(self.remaining_time_input.text())
         time_difference = 130 - remaining_time
+        if time_difference>30:
+            time_difference=time_difference-40
 
         for row in range(self.table.rowCount()):
             time_item = self.table.item(row, 0)
