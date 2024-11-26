@@ -79,7 +79,8 @@ def generation(stepname,stepfile):
         if i<len(stepfile)-1:
             t1=stepfile[i+1][0]
         else:
-            t1='0:02'
+            t2=stepfile[i][0]
+            t1='0:02' if t2!='0:01' else '0:01'
         output_s= output_s+f'''"{stepname}tc_{i}": {{
     "recognition": "OCR",
     "post_delay":{tdelay*1000},
@@ -221,7 +222,7 @@ def generation(stepname,stepfile):
     48,
     27
     ],
-    "expected": ["0:02"],"pre_delay": 15,"rate_limit":30,"timeout":20000,"next": [],
+    "expected": ["{t1}"],"pre_delay": 15,"rate_limit":30,"timeout":20000,"next": [],
     "action": "click","target": [
     1170,
     22,

@@ -1,0 +1,3773 @@
+{
+    "E1 4543start": {
+        "recognition": "TemplateMatch",
+        "threshold": [
+            0.95
+        ],
+        "template": [
+            "start.png"
+        ],
+        "action": "Click",
+        "next": [
+            "E1 4543start0"
+        ]
+    },
+    "E1 4543start0": {
+        "recognition": "TemplateMatch",
+        "threshold": [
+            0.95
+        ],
+        "template": [
+            "start0.png"
+        ],
+        "action": "Click",
+        "pre_delay": 100,
+        "post_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543start2",
+            "E1 4543autoc",
+            "E1 4543autoo"
+        ]
+    },
+    "E1 4543start2": {
+        "recognition": "TemplateMatch",
+        "threshold": [
+            0.95
+        ],
+        "template": [
+            "start2.png"
+        ],
+        "action": "Click",
+        "pre_delay": 100,
+        "post_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543autoc",
+            "E1 4543autoo"
+        ]
+    },
+    "E1 4543autoc": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "auto.png"
+        ],
+        "roi": [
+            1170,
+            510,
+            100,
+            100
+        ],
+        "threshold": [
+            0.95
+        ],
+        "action": "Click",
+        "pre_delay": 800,
+        "post_delay": 15,
+        "rate_limit": 30,
+        "next": [
+            "E1 4543tc_0"
+        ]
+    },
+    "E1 4543autoo": {
+        "recognition": "TemplateMatch",
+        "template": [
+            "autoo.png"
+        ],
+        "roi": [
+            1170,
+            510,
+            100,
+            100
+        ],
+        "threshold": [
+            0.85
+        ],
+        "action": "DoNothing",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "rate_limit": 30,
+        "next": [
+            "E1 4543tc_0"
+        ]
+    },
+    "E1 4543tc_0": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别1:24",
+        "expected": [
+            "1:24"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_0"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_0": {
+        "recognition": "ColorMatch",
+        "roi": [
+            950,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_0"
+        ]
+    },
+    "E1 4543tpc_0": {
+        "threshold": 0.9,
+        "recognition": "DirectHit",
+        "roi": [
+            950,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOX auto关",
+            "等待识别1:03"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_0",
+            "E1 4543c2_0",
+            "E1 4543c3_0",
+            "E1 4543c4_0",
+            "E1 4543c5_0",
+            "E1 4543c6_0",
+            "E1 4543tc_1"
+        ]
+    },
+    "E1 4543c1_0": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_0",
+            "E1 4543c3_0",
+            "E1 4543c4_0",
+            "E1 4543c5_0",
+            "E1 4543c6_0",
+            "E1 4543tc_1"
+        ]
+    },
+    "E1 4543c2_0": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_0",
+            "E1 4543c4_0",
+            "E1 4543c5_0",
+            "E1 4543c6_0",
+            "E1 4543tc_1"
+        ]
+    },
+    "E1 4543c3_0": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_0",
+            "E1 4543c5_0",
+            "E1 4543c6_0",
+            "E1 4543tc_1"
+        ]
+    },
+    "E1 4543c4_0": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_0",
+            "E1 4543c6_0",
+            "E1 4543tc_1"
+        ]
+    },
+    "E1 4543c5_0": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_0",
+            "E1 4543tc_1"
+        ]
+    },
+    "E1 4543c6_0": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_1"
+        ]
+    },
+    "E1 4543tc_1": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别1:03",
+        "expected": [
+            "1:03"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_1"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_1": {
+        "recognition": "ColorMatch",
+        "roi": [
+            790,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_1"
+        ]
+    },
+    "E1 4543tpc_1": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            790,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为XXOOO auto关",
+            "等待识别1:03"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_1",
+            "E1 4543c2_1",
+            "E1 4543c3_1",
+            "E1 4543c4_1",
+            "E1 4543c5_1",
+            "E1 4543c6_1",
+            "E1 4543tc_2"
+        ]
+    },
+    "E1 4543c1_1": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_1",
+            "E1 4543c3_1",
+            "E1 4543c4_1",
+            "E1 4543c5_1",
+            "E1 4543c6_1",
+            "E1 4543tc_2"
+        ]
+    },
+    "E1 4543c2_1": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_1",
+            "E1 4543c4_1",
+            "E1 4543c5_1",
+            "E1 4543c6_1",
+            "E1 4543tc_2"
+        ]
+    },
+    "E1 4543c3_1": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_1",
+            "E1 4543c5_1",
+            "E1 4543c6_1",
+            "E1 4543tc_2"
+        ]
+    },
+    "E1 4543c4_1": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_1",
+            "E1 4543c6_1",
+            "E1 4543tc_2"
+        ]
+    },
+    "E1 4543c5_1": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_1",
+            "E1 4543tc_2"
+        ]
+    },
+    "E1 4543c6_1": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_2"
+        ]
+    },
+    "E1 4543tc_2": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别1:03",
+        "expected": [
+            "1:03"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_2"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_2": {
+        "recognition": "ColorMatch",
+        "roi": [
+            950,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_2"
+        ]
+    },
+    "E1 4543tpc_2": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            950,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为XXOOX auto关",
+            "等待识别0:54"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_2",
+            "E1 4543c2_2",
+            "E1 4543c3_2",
+            "E1 4543c4_2",
+            "E1 4543c5_2",
+            "E1 4543c6_2",
+            "E1 4543tc_3"
+        ]
+    },
+    "E1 4543c1_2": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_2",
+            "E1 4543c3_2",
+            "E1 4543c4_2",
+            "E1 4543c5_2",
+            "E1 4543c6_2",
+            "E1 4543tc_3"
+        ]
+    },
+    "E1 4543c2_2": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_2",
+            "E1 4543c4_2",
+            "E1 4543c5_2",
+            "E1 4543c6_2",
+            "E1 4543tc_3"
+        ]
+    },
+    "E1 4543c3_2": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_2",
+            "E1 4543c5_2",
+            "E1 4543c6_2",
+            "E1 4543tc_3"
+        ]
+    },
+    "E1 4543c4_2": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_2",
+            "E1 4543c6_2",
+            "E1 4543tc_3"
+        ]
+    },
+    "E1 4543c5_2": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_2",
+            "E1 4543tc_3"
+        ]
+    },
+    "E1 4543c6_2": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_3"
+        ]
+    },
+    "E1 4543tc_3": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:54",
+        "expected": [
+            "0:54"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_3"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_3": {
+        "recognition": "ColorMatch",
+        "roi": [
+            630,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_3"
+        ]
+    },
+    "E1 4543tpc_3": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            630,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为XXOOX auto开",
+            "等待识别0:54"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_3",
+            "E1 4543c2_3",
+            "E1 4543c3_3",
+            "E1 4543c4_3",
+            "E1 4543c5_3",
+            "E1 4543c6_3",
+            "E1 4543tc_4"
+        ]
+    },
+    "E1 4543c1_3": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_3",
+            "E1 4543c3_3",
+            "E1 4543c4_3",
+            "E1 4543c5_3",
+            "E1 4543c6_3",
+            "E1 4543tc_4"
+        ]
+    },
+    "E1 4543c2_3": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_3",
+            "E1 4543c4_3",
+            "E1 4543c5_3",
+            "E1 4543c6_3",
+            "E1 4543tc_4"
+        ]
+    },
+    "E1 4543c3_3": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_3",
+            "E1 4543c5_3",
+            "E1 4543c6_3",
+            "E1 4543tc_4"
+        ]
+    },
+    "E1 4543c4_3": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_3",
+            "E1 4543c6_3",
+            "E1 4543tc_4"
+        ]
+    },
+    "E1 4543c5_3": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_3",
+            "E1 4543tc_4"
+        ]
+    },
+    "E1 4543c6_3": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_4"
+        ]
+    },
+    "E1 4543tc_4": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:54",
+        "expected": [
+            "0:54"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_4"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_4": {
+        "recognition": "ColorMatch",
+        "roi": [
+            470,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_4"
+        ]
+    },
+    "E1 4543tpc_4": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            470,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为XOOOX auto关",
+            "等待识别0:47"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_4",
+            "E1 4543c2_4",
+            "E1 4543c3_4",
+            "E1 4543c4_4",
+            "E1 4543c5_4",
+            "E1 4543c6_4",
+            "E1 4543tc_5"
+        ]
+    },
+    "E1 4543c1_4": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_4",
+            "E1 4543c3_4",
+            "E1 4543c4_4",
+            "E1 4543c5_4",
+            "E1 4543c6_4",
+            "E1 4543tc_5"
+        ]
+    },
+    "E1 4543c2_4": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_4",
+            "E1 4543c4_4",
+            "E1 4543c5_4",
+            "E1 4543c6_4",
+            "E1 4543tc_5"
+        ]
+    },
+    "E1 4543c3_4": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_4",
+            "E1 4543c5_4",
+            "E1 4543c6_4",
+            "E1 4543tc_5"
+        ]
+    },
+    "E1 4543c4_4": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_4",
+            "E1 4543c6_4",
+            "E1 4543tc_5"
+        ]
+    },
+    "E1 4543c5_4": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_4",
+            "E1 4543tc_5"
+        ]
+    },
+    "E1 4543c6_4": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_5"
+        ]
+    },
+    "E1 4543tc_5": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:47",
+        "expected": [
+            "0:47"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_5"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_5": {
+        "recognition": "ColorMatch",
+        "roi": [
+            790,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_5"
+        ]
+    },
+    "E1 4543tpc_5": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            790,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOX auto关",
+            "等待识别0:45"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_5",
+            "E1 4543c2_5",
+            "E1 4543c3_5",
+            "E1 4543c4_5",
+            "E1 4543c5_5",
+            "E1 4543c6_5",
+            "E1 4543tc_6"
+        ]
+    },
+    "E1 4543c1_5": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_5",
+            "E1 4543c3_5",
+            "E1 4543c4_5",
+            "E1 4543c5_5",
+            "E1 4543c6_5",
+            "E1 4543tc_6"
+        ]
+    },
+    "E1 4543c2_5": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_5",
+            "E1 4543c4_5",
+            "E1 4543c5_5",
+            "E1 4543c6_5",
+            "E1 4543tc_6"
+        ]
+    },
+    "E1 4543c3_5": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_5",
+            "E1 4543c5_5",
+            "E1 4543c6_5",
+            "E1 4543tc_6"
+        ]
+    },
+    "E1 4543c4_5": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_5",
+            "E1 4543c6_5",
+            "E1 4543tc_6"
+        ]
+    },
+    "E1 4543c5_5": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_5",
+            "E1 4543tc_6"
+        ]
+    },
+    "E1 4543c6_5": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_6"
+        ]
+    },
+    "E1 4543tc_6": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:45",
+        "expected": [
+            "0:45"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_6"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_6": {
+        "recognition": "ColorMatch",
+        "roi": [
+            470,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_6"
+        ]
+    },
+    "E1 4543tpc_6": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            470,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为XOOOO auto关",
+            "等待识别0:45"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_6",
+            "E1 4543c2_6",
+            "E1 4543c3_6",
+            "E1 4543c4_6",
+            "E1 4543c5_6",
+            "E1 4543c6_6",
+            "E1 4543tc_7"
+        ]
+    },
+    "E1 4543c1_6": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_6",
+            "E1 4543c3_6",
+            "E1 4543c4_6",
+            "E1 4543c5_6",
+            "E1 4543c6_6",
+            "E1 4543tc_7"
+        ]
+    },
+    "E1 4543c2_6": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_6",
+            "E1 4543c4_6",
+            "E1 4543c5_6",
+            "E1 4543c6_6",
+            "E1 4543tc_7"
+        ]
+    },
+    "E1 4543c3_6": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_6",
+            "E1 4543c5_6",
+            "E1 4543c6_6",
+            "E1 4543tc_7"
+        ]
+    },
+    "E1 4543c4_6": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_6",
+            "E1 4543c6_6",
+            "E1 4543tc_7"
+        ]
+    },
+    "E1 4543c5_6": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_6",
+            "E1 4543tc_7"
+        ]
+    },
+    "E1 4543c6_6": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_7"
+        ]
+    },
+    "E1 4543tc_7": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:45",
+        "expected": [
+            "0:45"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_7"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_7": {
+        "recognition": "ColorMatch",
+        "roi": [
+            950,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_7"
+        ]
+    },
+    "E1 4543tpc_7": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            950,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为XOOOX auto关",
+            "等待识别0:31"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_7",
+            "E1 4543c2_7",
+            "E1 4543c3_7",
+            "E1 4543c4_7",
+            "E1 4543c5_7",
+            "E1 4543c6_7",
+            "E1 4543tc_8"
+        ]
+    },
+    "E1 4543c1_7": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_7",
+            "E1 4543c3_7",
+            "E1 4543c4_7",
+            "E1 4543c5_7",
+            "E1 4543c6_7",
+            "E1 4543tc_8"
+        ]
+    },
+    "E1 4543c2_7": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_7",
+            "E1 4543c4_7",
+            "E1 4543c5_7",
+            "E1 4543c6_7",
+            "E1 4543tc_8"
+        ]
+    },
+    "E1 4543c3_7": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_7",
+            "E1 4543c5_7",
+            "E1 4543c6_7",
+            "E1 4543tc_8"
+        ]
+    },
+    "E1 4543c4_7": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_7",
+            "E1 4543c6_7",
+            "E1 4543tc_8"
+        ]
+    },
+    "E1 4543c5_7": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_7",
+            "E1 4543tc_8"
+        ]
+    },
+    "E1 4543c6_7": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_8"
+        ]
+    },
+    "E1 4543tc_8": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:31",
+        "expected": [
+            "0:31"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_8"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_8": {
+        "recognition": "ColorMatch",
+        "roi": [
+            790,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_8"
+        ]
+    },
+    "E1 4543tpc_8": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            790,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOX auto关",
+            "等待识别0:31"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_8",
+            "E1 4543c2_8",
+            "E1 4543c3_8",
+            "E1 4543c4_8",
+            "E1 4543c5_8",
+            "E1 4543c6_8",
+            "E1 4543tc_9"
+        ]
+    },
+    "E1 4543c1_8": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_8",
+            "E1 4543c3_8",
+            "E1 4543c4_8",
+            "E1 4543c5_8",
+            "E1 4543c6_8",
+            "E1 4543tc_9"
+        ]
+    },
+    "E1 4543c2_8": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_8",
+            "E1 4543c4_8",
+            "E1 4543c5_8",
+            "E1 4543c6_8",
+            "E1 4543tc_9"
+        ]
+    },
+    "E1 4543c3_8": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_8",
+            "E1 4543c5_8",
+            "E1 4543c6_8",
+            "E1 4543tc_9"
+        ]
+    },
+    "E1 4543c4_8": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_8",
+            "E1 4543c6_8",
+            "E1 4543tc_9"
+        ]
+    },
+    "E1 4543c5_8": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_8",
+            "E1 4543tc_9"
+        ]
+    },
+    "E1 4543c6_8": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_9"
+        ]
+    },
+    "E1 4543tc_9": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:31",
+        "expected": [
+            "0:31"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_9"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_9": {
+        "recognition": "ColorMatch",
+        "roi": [
+            310,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_9"
+        ]
+    },
+    "E1 4543tpc_9": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            310,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOO auto关",
+            "等待识别0:31"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_9",
+            "E1 4543c2_9",
+            "E1 4543c3_9",
+            "E1 4543c4_9",
+            "E1 4543c5_9",
+            "E1 4543c6_9",
+            "E1 4543tc_10"
+        ]
+    },
+    "E1 4543c1_9": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_9",
+            "E1 4543c3_9",
+            "E1 4543c4_9",
+            "E1 4543c5_9",
+            "E1 4543c6_9",
+            "E1 4543tc_10"
+        ]
+    },
+    "E1 4543c2_9": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_9",
+            "E1 4543c4_9",
+            "E1 4543c5_9",
+            "E1 4543c6_9",
+            "E1 4543tc_10"
+        ]
+    },
+    "E1 4543c3_9": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_9",
+            "E1 4543c5_9",
+            "E1 4543c6_9",
+            "E1 4543tc_10"
+        ]
+    },
+    "E1 4543c4_9": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_9",
+            "E1 4543c6_9",
+            "E1 4543tc_10"
+        ]
+    },
+    "E1 4543c5_9": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_9",
+            "E1 4543tc_10"
+        ]
+    },
+    "E1 4543c6_9": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_10"
+        ]
+    },
+    "E1 4543tc_10": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:31",
+        "expected": [
+            "0:31"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_10"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_10": {
+        "recognition": "ColorMatch",
+        "roi": [
+            950,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_10"
+        ]
+    },
+    "E1 4543tpc_10": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            950,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OXOOX auto关",
+            "等待识别0:27"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_10",
+            "E1 4543c2_10",
+            "E1 4543c3_10",
+            "E1 4543c4_10",
+            "E1 4543c5_10",
+            "E1 4543c6_10",
+            "E1 4543tc_11"
+        ]
+    },
+    "E1 4543c1_10": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_10",
+            "E1 4543c3_10",
+            "E1 4543c4_10",
+            "E1 4543c5_10",
+            "E1 4543c6_10",
+            "E1 4543tc_11"
+        ]
+    },
+    "E1 4543c2_10": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_10",
+            "E1 4543c4_10",
+            "E1 4543c5_10",
+            "E1 4543c6_10",
+            "E1 4543tc_11"
+        ]
+    },
+    "E1 4543c3_10": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_10",
+            "E1 4543c5_10",
+            "E1 4543c6_10",
+            "E1 4543tc_11"
+        ]
+    },
+    "E1 4543c4_10": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_10",
+            "E1 4543c6_10",
+            "E1 4543tc_11"
+        ]
+    },
+    "E1 4543c5_10": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_10",
+            "E1 4543tc_11"
+        ]
+    },
+    "E1 4543c6_10": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_11"
+        ]
+    },
+    "E1 4543tc_11": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:27",
+        "expected": [
+            "0:27"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_11"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_11": {
+        "recognition": "ColorMatch",
+        "roi": [
+            950,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_11"
+        ]
+    },
+    "E1 4543tpc_11": {
+        "threshold": 0.9,
+        "recognition": "DirectHit",
+        "roi": [
+            950,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOX auto关",
+            "等待识别0:26"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_11",
+            "E1 4543c2_11",
+            "E1 4543c3_11",
+            "E1 4543c4_11",
+            "E1 4543c5_11",
+            "E1 4543c6_11",
+            "E1 4543tc_12"
+        ]
+    },
+    "E1 4543c1_11": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_11",
+            "E1 4543c3_11",
+            "E1 4543c4_11",
+            "E1 4543c5_11",
+            "E1 4543c6_11",
+            "E1 4543tc_12"
+        ]
+    },
+    "E1 4543c2_11": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_11",
+            "E1 4543c4_11",
+            "E1 4543c5_11",
+            "E1 4543c6_11",
+            "E1 4543tc_12"
+        ]
+    },
+    "E1 4543c3_11": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_11",
+            "E1 4543c5_11",
+            "E1 4543c6_11",
+            "E1 4543tc_12"
+        ]
+    },
+    "E1 4543c4_11": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_11",
+            "E1 4543c6_11",
+            "E1 4543tc_12"
+        ]
+    },
+    "E1 4543c5_11": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_11",
+            "E1 4543tc_12"
+        ]
+    },
+    "E1 4543c6_11": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_12"
+        ]
+    },
+    "E1 4543tc_12": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:26",
+        "expected": [
+            "0:26"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_12"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_12": {
+        "recognition": "ColorMatch",
+        "roi": [
+            630,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_12"
+        ]
+    },
+    "E1 4543tpc_12": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            630,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOXOX auto开",
+            "等待识别0:17"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_12",
+            "E1 4543c2_12",
+            "E1 4543c3_12",
+            "E1 4543c4_12",
+            "E1 4543c5_12",
+            "E1 4543c6_12",
+            "E1 4543tc_13"
+        ]
+    },
+    "E1 4543c1_12": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_12",
+            "E1 4543c3_12",
+            "E1 4543c4_12",
+            "E1 4543c5_12",
+            "E1 4543c6_12",
+            "E1 4543tc_13"
+        ]
+    },
+    "E1 4543c2_12": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_12",
+            "E1 4543c4_12",
+            "E1 4543c5_12",
+            "E1 4543c6_12",
+            "E1 4543tc_13"
+        ]
+    },
+    "E1 4543c3_12": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_12",
+            "E1 4543c5_12",
+            "E1 4543c6_12",
+            "E1 4543tc_13"
+        ]
+    },
+    "E1 4543c4_12": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_12",
+            "E1 4543c6_12",
+            "E1 4543tc_13"
+        ]
+    },
+    "E1 4543c5_12": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_12",
+            "E1 4543tc_13"
+        ]
+    },
+    "E1 4543c6_12": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_13"
+        ]
+    },
+    "E1 4543tc_13": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:17",
+        "expected": [
+            "0:17"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_13"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_13": {
+        "recognition": "ColorMatch",
+        "roi": [
+            950,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_13"
+        ]
+    },
+    "E1 4543tpc_13": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            950,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOXOX auto关",
+            "等待识别0:15"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_13",
+            "E1 4543c2_13",
+            "E1 4543c3_13",
+            "E1 4543c4_13",
+            "E1 4543c5_13",
+            "E1 4543c6_13",
+            "E1 4543tc_14"
+        ]
+    },
+    "E1 4543c1_13": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_13",
+            "E1 4543c3_13",
+            "E1 4543c4_13",
+            "E1 4543c5_13",
+            "E1 4543c6_13",
+            "E1 4543tc_14"
+        ]
+    },
+    "E1 4543c2_13": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_13",
+            "E1 4543c4_13",
+            "E1 4543c5_13",
+            "E1 4543c6_13",
+            "E1 4543tc_14"
+        ]
+    },
+    "E1 4543c3_13": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_13",
+            "E1 4543c5_13",
+            "E1 4543c6_13",
+            "E1 4543tc_14"
+        ]
+    },
+    "E1 4543c4_13": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_13",
+            "E1 4543c6_13",
+            "E1 4543tc_14"
+        ]
+    },
+    "E1 4543c5_13": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_13",
+            "E1 4543tc_14"
+        ]
+    },
+    "E1 4543c6_13": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_14"
+        ]
+    },
+    "E1 4543tc_14": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:15",
+        "expected": [
+            "0:15"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_14"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_14": {
+        "recognition": "ColorMatch",
+        "roi": [
+            310,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_14"
+        ]
+    },
+    "E1 4543tpc_14": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            310,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOX auto关",
+            "等待识别0:13"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_14",
+            "E1 4543c2_14",
+            "E1 4543c3_14",
+            "E1 4543c4_14",
+            "E1 4543c5_14",
+            "E1 4543c6_14",
+            "E1 4543tc_15"
+        ]
+    },
+    "E1 4543c1_14": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_14",
+            "E1 4543c3_14",
+            "E1 4543c4_14",
+            "E1 4543c5_14",
+            "E1 4543c6_14",
+            "E1 4543tc_15"
+        ]
+    },
+    "E1 4543c2_14": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_14",
+            "E1 4543c4_14",
+            "E1 4543c5_14",
+            "E1 4543c6_14",
+            "E1 4543tc_15"
+        ]
+    },
+    "E1 4543c3_14": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_14",
+            "E1 4543c5_14",
+            "E1 4543c6_14",
+            "E1 4543tc_15"
+        ]
+    },
+    "E1 4543c4_14": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_14",
+            "E1 4543c6_14",
+            "E1 4543tc_15"
+        ]
+    },
+    "E1 4543c5_14": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_14",
+            "E1 4543tc_15"
+        ]
+    },
+    "E1 4543c6_14": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_15"
+        ]
+    },
+    "E1 4543tc_15": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:13",
+        "expected": [
+            "0:13"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_15"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_15": {
+        "recognition": "ColorMatch",
+        "roi": [
+            950,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_15"
+        ]
+    },
+    "E1 4543tpc_15": {
+        "threshold": 0.9,
+        "recognition": "DirectHit",
+        "roi": [
+            950,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOXX auto关",
+            "等待识别0:08"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_15",
+            "E1 4543c2_15",
+            "E1 4543c3_15",
+            "E1 4543c4_15",
+            "E1 4543c5_15",
+            "E1 4543c6_15",
+            "E1 4543tc_16"
+        ]
+    },
+    "E1 4543c1_15": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_15",
+            "E1 4543c3_15",
+            "E1 4543c4_15",
+            "E1 4543c5_15",
+            "E1 4543c6_15",
+            "E1 4543tc_16"
+        ]
+    },
+    "E1 4543c2_15": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_15",
+            "E1 4543c4_15",
+            "E1 4543c5_15",
+            "E1 4543c6_15",
+            "E1 4543tc_16"
+        ]
+    },
+    "E1 4543c3_15": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_15",
+            "E1 4543c5_15",
+            "E1 4543c6_15",
+            "E1 4543tc_16"
+        ]
+    },
+    "E1 4543c4_15": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_15",
+            "E1 4543c6_15",
+            "E1 4543tc_16"
+        ]
+    },
+    "E1 4543c5_15": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_15",
+            "E1 4543tc_16"
+        ]
+    },
+    "E1 4543c6_15": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_16"
+        ]
+    },
+    "E1 4543tc_16": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:08",
+        "expected": [
+            "0:08"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_16"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_16": {
+        "recognition": "ColorMatch",
+        "roi": [
+            630,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_16"
+        ]
+    },
+    "E1 4543tpc_16": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            630,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOX auto关",
+            "等待识别0:01"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_16",
+            "E1 4543c2_16",
+            "E1 4543c3_16",
+            "E1 4543c4_16",
+            "E1 4543c5_16",
+            "E1 4543c6_16",
+            "E1 4543tc_17"
+        ]
+    },
+    "E1 4543c1_16": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_16",
+            "E1 4543c3_16",
+            "E1 4543c4_16",
+            "E1 4543c5_16",
+            "E1 4543c6_16",
+            "E1 4543tc_17"
+        ]
+    },
+    "E1 4543c2_16": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_16",
+            "E1 4543c4_16",
+            "E1 4543c5_16",
+            "E1 4543c6_16",
+            "E1 4543tc_17"
+        ]
+    },
+    "E1 4543c3_16": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_16",
+            "E1 4543c5_16",
+            "E1 4543c6_16",
+            "E1 4543tc_17"
+        ]
+    },
+    "E1 4543c4_16": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_16",
+            "E1 4543c6_16",
+            "E1 4543tc_17"
+        ]
+    },
+    "E1 4543c5_16": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_16",
+            "E1 4543tc_17"
+        ]
+    },
+    "E1 4543c6_16": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tc_17"
+        ]
+    },
+    "E1 4543tc_17": {
+        "recognition": "OCR",
+        "post_delay": 15.0,
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "focus": true,
+        "focus_tip": "已识别0:01",
+        "expected": [
+            "0:01"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_17"
+        ],
+        "action": "DoNothing"
+    },
+    "E1 4543btpc_17": {
+        "recognition": "ColorMatch",
+        "roi": [
+            310,
+            695,
+            40,
+            5
+        ],
+        "action": "DoNothing",
+        "count": 199,
+        "upper": [
+            80,
+            240,
+            255
+        ],
+        "lower": [
+            30,
+            195,
+            210
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543tpc_17"
+        ]
+    },
+    "E1 4543tpc_17": {
+        "threshold": 0.9,
+        "recognition": "TemplateMatch",
+        "roi": [
+            310,
+            687,
+            25,
+            20
+        ],
+        "focus": true,
+        "focus_tip": [
+            "预计点击后状态为OOOOO auto关",
+            "等待识别0:01"
+        ],
+        "action": "DoNothing",
+        "template": [
+            "aub.png"
+        ],
+        "pre_delay": 50,
+        "post_delay": 50,
+        "rate_limit": 100,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c1_17",
+            "E1 4543c2_17",
+            "E1 4543c3_17",
+            "E1 4543c4_17",
+            "E1 4543c5_17",
+            "E1 4543c6_17",
+            "E1 4543p"
+        ]
+    },
+    "E1 4543c1_17": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            300,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c2_17",
+            "E1 4543c3_17",
+            "E1 4543c4_17",
+            "E1 4543c5_17",
+            "E1 4543c6_17",
+            "E1 4543p"
+        ]
+    },
+    "E1 4543c2_17": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            460,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c3_17",
+            "E1 4543c4_17",
+            "E1 4543c5_17",
+            "E1 4543c6_17",
+            "E1 4543p"
+        ]
+    },
+    "E1 4543c3_17": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            660,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c4_17",
+            "E1 4543c5_17",
+            "E1 4543c6_17",
+            "E1 4543p"
+        ]
+    },
+    "E1 4543c4_17": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            780,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c5_17",
+            "E1 4543c6_17",
+            "E1 4543p"
+        ]
+    },
+    "E1 4543c5_17": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": true,
+        "action": "Click",
+        "target": [
+            940,
+            550,
+            50,
+            50
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543c6_17",
+            "E1 4543p"
+        ]
+    },
+    "E1 4543c6_17": {
+        "recognition": "DirectHit",
+        "pre_delay": 15,
+        "post_delay": 15,
+        "enabled": false,
+        "action": "Click",
+        "target": [
+            1195,
+            537,
+            30,
+            30
+        ],
+        "rate_limit": 30,
+        "timeout": 500000,
+        "next": [
+            "E1 4543p"
+        ]
+    },
+    "E1 4543p": {
+        "recognition": "OCR",
+        "roi": [
+            1075,
+            20,
+            48,
+            27
+        ],
+        "expected": [
+            "0:01"
+        ],
+        "pre_delay": 15,
+        "rate_limit": 30,
+        "timeout": 20000,
+        "next": [],
+        "action": "click",
+        "target": [
+            1170,
+            22,
+            55,
+            24
+        ]
+    }
+}
