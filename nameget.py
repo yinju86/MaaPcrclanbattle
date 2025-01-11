@@ -86,6 +86,7 @@ def rewrite(sname,namestr,boss):
             new_value["next"] = [f"{sname}{item}" for item in new_value["next"]]
 
         updated_data[new_key] = new_value
+    os.makedirs('resource/pipeline', exist_ok=True)
     with open(f'resource\\pipeline\\{sname}选人.json', 'w', encoding='utf-8') as f:
         json.dump(updated_data, f, indent=4, ensure_ascii=False)
     with open('interface.json', 'r', encoding='utf-8') as json_file:

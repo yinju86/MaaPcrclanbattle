@@ -11,6 +11,7 @@ import webbrowser
 import requests  # 添加导入
 import ota
 import nameget
+from PyQt5.QtCore import QThread, pyqtSignal
 
 def get_version():
     try:
@@ -476,7 +477,29 @@ class MainWindow(QWidget):
             QMessageBox.warning(self, '错误', f'删除脚本失败：{str(e)}')
 
     def update_character_list(self):
-        ota.devMain()
+        # 开始提示
+        QMessageBox.information(self, '提示', '开始下载请勿关闭窗口,可能需要数分钟和科学上网')
+        
+        # 创建并启动下载线程
+        self.ota_thread = OtaThread()
+        self.ota_thread.finished.connect(self._on_download_complete)
+        self.ota_thread.start()
+
+    def _on_download_complete(self):
+        # 完成提示
+        QMessageBox.information(self, '提示', '角色更新完成')
+
+class OtaThread(QThread):
+    finished = pyqtSignal()
+    
+    def run(self):
+        try:
+            ota.devMain()
+            self.finished.emit()
+        except Exception as e:
+            # 异常处理可以根据需要添加
+            pass
+
     
 if __name__ == '__main__':
     app = QApplication(sys.argv)
