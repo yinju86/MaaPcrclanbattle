@@ -111,8 +111,7 @@ jobs:
           # url项示例  https://github.com/SweetSmellFox/MFAWPF
           jq --arg version_name "MaaPcrclanbattle" --arg url ""https://github.com/yinju86/MaaPcrclanbattle"" --arg version ${{ needs.meta.outputs.tag }} '. + {"name": $version_name, "url": $url,"version": $version}' ./assets/interface.json > ./install/interface.json
           pip install pyinstaller
-          pip install pyqt5
-          pip install requests
+          pip install -r assets/requirements.txt
           pyinstaller --onefile -w --icon=assets/resource/kyouka.ico generator.py
           cp ./dist/generator.exe ./install
       - uses: actions/upload-artifact@v4
