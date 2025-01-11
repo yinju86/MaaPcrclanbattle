@@ -49,6 +49,15 @@ def install_resource():
         working_dir / "assets" / "interface.json",
         install_path,
     )
+    shutil.copytree(
+        working_dir / "assets" / "CharData",
+        install_path / "CharData",
+        dirs_exist_ok=True,
+    )
+    shutil.copy2(
+        working_dir / "assets" / "reference.json",
+        install_path,
+    )
   
 
     with open(install_path / "interface.json", "r", encoding="utf-8") as f:

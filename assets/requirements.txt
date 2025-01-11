@@ -1,5 +1,5 @@
 Brotli==1.1.0
-opencv_python==4.8.1.78
+opencv_python
 Pillow==11.1.0
 pygtrie==2.5.0
 PyQt5==5.15.11
