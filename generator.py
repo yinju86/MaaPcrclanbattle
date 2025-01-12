@@ -263,7 +263,7 @@ class MainWindow(QWidget):
         if char and input_text:
             boss=int(input_text[1])
             normalizename=nameget.rewrite(input_text,char,boss)
-            self.input_box.setText(normalizename)   
+            self.char_input.setText(normalizename)
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
         code=sharecode.to_share(content,td)
         self.autosave(f"{stepname}:{char}:{code}")
