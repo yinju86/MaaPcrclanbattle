@@ -1,0 +1,622 @@
+{
+  "click_adventure": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "adventure.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "click_team_battle"
+    ]
+  },
+  "click_team_battle": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "team_battle.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "post_delay": 10000,
+    "action": "Click",
+    "next": [
+      "click_confirm",
+      "click_boss1",
+      "click_boss2",
+      "click_boss3",
+      "click_boss4",
+      "click_boss5"
+    ]
+  },
+  "click_confirm": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "start3.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "click_boss1",
+      "click_boss2",
+      "click_boss3",
+      "click_boss4",
+      "click_boss5"
+    ]
+  },
+  "click_boss1": {
+    "recognition": "DirectHit",
+    "enable": false,
+    "focus": true,
+    "focus_tip": [
+      "点击boss1"
+    ],
+    "action": "Click",
+    "target": [
+      142,
+      375,
+      97,
+      80
+    ],
+    "post_delay": 1500,
+    "next": [
+      "click_simulation_battle",
+      "click_challenge"
+    ]
+  },
+  "click_boss2": {
+    "recognition": "DirectHit",
+    "enable": false,
+    "focus": true,
+    "focus_tip": [
+      "点击boss2"
+    ],
+    "action": "Click",
+    "target": [
+      316,
+      397,
+      97,
+      80
+    ],
+    "post_delay": 1500,
+    "next": [
+      "click_simulation_battle",
+      "click_challenge"
+    ]
+  },
+  "click_boss3": {
+    "recognition": "DirectHit",
+    "enable": false,
+    "focus": true,
+    "focus_tip": [
+      "点击boss3"
+    ],
+    "action": "Click",
+    "target": [
+      550,
+      172,
+      97,
+      80
+    ],
+    "post_delay": 1500,
+    "next": [
+      "click_simulation_battle",
+      "click_challenge"
+    ]
+  },
+  "click_boss4": {
+    "recognition": "DirectHit",
+    "enable": false,
+    "focus": true,
+    "focus_tip": [
+      "点击boss4"
+    ],
+    "action": "Click",
+    "target": [
+      780,
+      375,
+      97,
+      80
+    ],
+    "post_delay": 1500,
+    "next": [
+      "click_simulation_battle",
+      "click_challenge"
+    ]
+  },
+  "click_boss5": {
+    "recognition": "DirectHit",
+    "enable": false,
+    "focus": true,
+    "focus_tip": [
+      "点击boss5"
+    ],
+    "action": "Click",
+    "target": [
+      1051,
+      325,
+      97,
+      80
+    ],
+    "post_delay": 1500,
+    "next": [
+      "click_simulation_battle",
+      "click_challenge"
+    ]
+  },
+  "click_challenge": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "start.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "post_delay": 1500,
+    "next": [
+      "click_specific_point"
+    ]
+  },
+  "click_simulation_battle": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "simulation_battle.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "enabled": true,
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "click_challenge"
+    ]
+  },
+  "click_specific_point": {
+    "recognition": "DirectHit",
+    "target": [
+      700,
+      600,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "click_specific_point2"
+    ]
+  },
+  "click_specific_point2": {
+    "recognition": "DirectHit",
+    "target": [
+      700,
+      600,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "click_specific_point3"
+    ]
+  },
+  "click_specific_point3": {
+    "recognition": "DirectHit",
+    "target": [
+      700,
+      600,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "click_specific_point4"
+    ]
+  },
+  "click_specific_point4": {
+    "recognition": "DirectHit",
+    "target": [
+      700,
+      600,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "click_specific_point5"
+    ]
+  },
+  "click_specific_point5": {
+    "recognition": "DirectHit",
+    "target": [
+      700,
+      600,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "click_support"
+    ]
+  },
+  "click_support": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "support.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "scroll_down_support"
+    ]
+  },
+  "scroll_down_support": {
+    "recognition": "DirectHit",
+    "begin": [
+      180,
+      180,
+      10,
+      10
+    ],
+    "end": [
+      180,
+      500,
+      10,
+      10
+    ],
+    "action": "Swipe",
+    "post_delay": 2000,
+    "next": [
+      "text_input_sequence_1"
+    ]
+  },
+  "text_input_sequence_1": {
+    "recognition": "DirectHit",
+    "target": [
+      686,
+      168,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "input_text_1"
+    ]
+  },
+  "input_text_1": {
+    "recognition": "DirectHit",
+    "input_text": "雪",
+    "action": "InputText",
+    "next": [
+      "click_confirm_text_1"
+    ]
+  },
+  "click_confirm_text_1": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "confirm_text.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "find1"
+    ]
+  },
+  "find1": {
+    "recognition": "FeatureMatch",
+    "template": [
+      "106461.jpg"
+    ],
+    "count": 7,
+    "focus": true,
+    "focus_tip": [
+      "选角色1"
+    ],
+    "action": "Click",
+    "next": [
+      "click_all"
+    ]
+  },
+  "click_all": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "all.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "scroll_down_support2"
+    ]
+  },
+  "scroll_down_support2": {
+    "recognition": "DirectHit",
+    "begin": [
+      180,
+      180,
+      10,
+      10
+    ],
+    "end": [
+      180,
+      500,
+      10,
+      10
+    ],
+    "post_delay": 2000,
+    "action": "Swipe",
+    "next": [
+      "text_input_sequence_2"
+    ]
+  },
+  "text_input_sequence_2": {
+    "recognition": "DirectHit",
+    "target": [
+      686,
+      168,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "input_text_2"
+    ]
+  },
+  "input_text_2": {
+    "recognition": "DirectHit",
+    "input_text": "镜",
+    "action": "InputText",
+    "next": [
+      "click_confirm_text_2"
+    ]
+  },
+  "click_confirm_text_2": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "confirm_text.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "find2"
+    ]
+  },
+  "find2": {
+    "recognition": "FeatureMatch",
+    "template": [
+      "103661.jpg"
+    ],
+    "count": 7,
+    "focus": true,
+    "focus_tip": [
+      "选角色2"
+    ],
+    "action": "Click",
+    "next": [
+      "text_input_sequence_3"
+    ]
+  },
+  "text_input_sequence_3": {
+    "recognition": "DirectHit",
+    "target": [
+      686,
+      168,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "input_text_3"
+    ]
+  },
+  "input_text_3": {
+    "recognition": "DirectHit",
+    "input_text": "111",
+    "action": "InputText",
+    "next": [
+      "click_confirm_text_3"
+    ]
+  },
+  "click_confirm_text_3": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "confirm_text.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "find3"
+    ]
+  },
+  "find3": {
+    "recognition": "FeatureMatch",
+    "template": [
+      "output.jpg"
+    ],
+    "count": 7,
+    "focus": true,
+    "focus_tip": [
+      "选角色3"
+    ],
+    "action": "Click",
+    "next": [
+      "text_input_sequence_4"
+    ]
+  },
+  "text_input_sequence_4": {
+    "recognition": "DirectHit",
+    "target": [
+      686,
+      168,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "input_text_4"
+    ]
+  },
+  "input_text_4": {
+    "recognition": "DirectHit",
+    "input_text": "111",
+    "action": "InputText",
+    "next": [
+      "click_confirm_text_4"
+    ]
+  },
+  "click_confirm_text_4": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "confirm_text.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "find4"
+    ]
+  },
+  "find4": {
+    "recognition": "FeatureMatch",
+    "template": [
+      "output.jpg"
+    ],
+    "count": 7,
+    "focus": true,
+    "focus_tip": [
+      "选角色4"
+    ],
+    "action": "Click",
+    "next": [
+      "text_input_sequence_5"
+    ]
+  },
+  "text_input_sequence_5": {
+    "recognition": "DirectHit",
+    "target": [
+      686,
+      168,
+      10,
+      10
+    ],
+    "action": "Click",
+    "next": [
+      "input_text_5"
+    ]
+  },
+  "input_text_5": {
+    "recognition": "DirectHit",
+    "input_text": "111",
+    "action": "InputText",
+    "next": [
+      "click_confirm_text_5"
+    ]
+  },
+  "click_confirm_text_5": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "confirm_text.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "find5"
+    ]
+  },
+  "find5": {
+    "recognition": "FeatureMatch",
+    "template": [
+      "output.jpg"
+    ],
+    "count": 7,
+    "focus": true,
+    "focus_tip": [
+      "选角色5"
+    ],
+    "action": "Click",
+    "next": [
+      "click_start"
+    ]
+  },
+  "click_start": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "start0.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "post_delay": 5000,
+    "action": "Click",
+    "next": [
+      "click_menu"
+    ]
+  },
+  "click_menu": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "menu.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "click_exit"
+    ]
+  },
+  "click_exit": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "exit.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": [
+      "click_exit2"
+    ]
+  },
+  "click_exit2": {
+    "recognition": "TemplateMatch",
+    "template": [
+      "exit2.png"
+    ],
+    "threshold": [
+      0.9
+    ],
+    "order_by": "Score",
+    "action": "Click",
+    "next": []
+  }
+}

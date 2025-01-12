@@ -9,6 +9,9 @@ import json
 from pathlib import Path
 import webbrowser
 import requests  # 添加导入
+import ota
+import nameget
+from PyQt5.QtCore import QThread, pyqtSignal
 
 def get_version():
     try:
@@ -40,6 +43,13 @@ class MainWindow(QWidget):
         manage_action = script_menu.addAction('管理脚本')
         manage_action.triggered.connect(self.show_script_manager)
         
+        # 添加更新菜单
+        update_menu = QMenu('更新(初次使用务必更新)', self)
+        self.menu_bar.addMenu(update_menu)
+        
+        update_action = update_menu.addAction('更新角色列表')
+        update_action.triggered.connect(self.update_character_list)
+        
         help_menu = QMenu('帮助', self)
         self.menu_bar.addMenu(help_menu)
         
@@ -62,11 +72,26 @@ class MainWindow(QWidget):
         self.table.setItem(0,0,item)
 
         self.layout.addWidget(self.table)
+        
+        # 创建角色输入布局
+        self.char_layout = QHBoxLayout()
+        self.char_label = QLabel("使用角色：")
+        self.char_input = QLineEdit()
+        self.char_input.setPlaceholderText("无需自动选人可不填写,默认借第一位,可使用昵称")
+        self.char_layout.addWidget(self.char_label)
+        self.char_layout.addWidget(self.char_input)
+        
+        # 轴名输入布局
         self.input_layout = QHBoxLayout()
         self.label = QLabel("轴名：")
         self.input_box = QLineEdit()
+        self.input_box.setPlaceholderText("前两位必须为boss编号,如E5,D4")
         self.input_layout.addWidget(self.label)
         self.input_layout.addWidget(self.input_box)
+        
+        # 添加到主布局
+        self.layout.addLayout(self.char_layout)
+        self.layout.addLayout(self.input_layout)
 
         # 添加余刀剩余时间标签和输入框
         self.remaining_time_label = QLabel("余刀剩余时间：")
@@ -234,9 +259,14 @@ class MainWindow(QWidget):
                 status_diff =  [x != y for x, y in zip(s, prev_status)]
                 output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff,td.get(i,0.015)))
         input_text = self.input_box.text()
+        char=self.char_input.text()
+        if char and input_text:
+            boss=int(input_text[1])
+            normalizename=nameget.rewrite(input_text,char,boss)
+            self.char_input.setText(normalizename)
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
         code=sharecode.to_share(content,td)
-        self.autosave(f"{stepname}:{code}")
+        self.autosave(f"{stepname}:{char}:{code}")
         scriptgeneration.generation(stepname=stepname,stepfile=output_text)
         msg = QMessageBox()
         msg.setText(f'已生成脚本 "{stepname}"')
@@ -248,7 +278,7 @@ class MainWindow(QWidget):
             self.usecontent(c,t)
         except Exception as e:
             msg = QMessageBox()
-            msg.setText(f'发生错{e}')
+            msg.setText(f'发生错误{e}')
             msg.setIcon(QMessageBox.Information)
             msg.exec_()
     def set_input(self, content, td):
@@ -280,7 +310,11 @@ class MainWindow(QWidget):
         text_edit.setReadOnly(True)  # 设置为只读模式，防止用户编辑
         input_text = self.input_box.text()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
-        text_edit.setText(f"{stepname}:{code}")  # 设置要显示的文本
+        char=self.char_input.text()
+        if char:
+            text_edit.setText(f"{stepname}:{char}:{code}")
+        else:
+            text_edit.setText(f"{stepname}:{code}")  # 设置要显示的文本
         layout.addWidget(text_edit)
         
         # 添加共享网址提示
@@ -296,8 +330,13 @@ class MainWindow(QWidget):
         try:
             if ":" in a:
                 a=a.split(":")
-                c,t=sharecode.from_share(a[1])
-                self.input_box.setText(a[0])
+                if len(a)==2:
+                    c,t=sharecode.from_share(a[1])
+                    self.input_box.setText(a[0])
+                elif len(a)==3:
+                    c,t=sharecode.from_share(a[2])
+                    self.char_input.setText(a[1])
+                    self.input_box.setText(a[0])
                 self.set_input(c,t)
             else:
                 c,t=sharecode.from_share(a)
@@ -313,10 +352,7 @@ class MainWindow(QWidget):
         with open("自动保存的分享码.txt", 'a', encoding='utf-8') as file:
             # 写入字符串到文件尾，并换行
             file.write(content + '\n')
-        try:
-            requests.get(f"http://1.12.249.80:9176/{content}")  # 自动分享
-        except:
-            pass
+
     
     def show_about(self):
         dialog = QDialog(self)
@@ -366,7 +402,7 @@ class MainWindow(QWidget):
     def open_readme(self):
         try:
             readme_path = Path(__file__).parent / "README.md"
-            if readme_path.exists():
+            if (readme_path.exists()):
                 webbrowser.open(str(readme_path))
             else:
                 msg = QMessageBox()
@@ -440,6 +476,29 @@ class MainWindow(QWidget):
         except Exception as e:
             QMessageBox.warning(self, '错误', f'删除脚本失败：{str(e)}')
 
+    def update_character_list(self):
+        # 开始提示
+        QMessageBox.information(self, '提示', '开始下载请勿关闭窗口,可能需要数分钟和科学上网')
+        
+        # 创建并启动下载线程
+        self.ota_thread = OtaThread()
+        self.ota_thread.finished.connect(self._on_download_complete)
+        self.ota_thread.start()
+
+    def _on_download_complete(self):
+        # 完成提示
+        QMessageBox.information(self, '提示', '角色更新完成')
+
+class OtaThread(QThread):
+    finished = pyqtSignal()
+    
+    def run(self):
+        try:
+            ota.devMain()
+            self.finished.emit()
+        except Exception as e:
+            # 异常处理可以根据需要添加
+            pass
 
     
 if __name__ == '__main__':
