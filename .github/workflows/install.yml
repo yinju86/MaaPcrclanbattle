@@ -101,7 +101,7 @@ jobs:
           repository: SweetSmellFox/MFAWPF
           filename: MFAWPF*
           version: "tag"
-          tag: "v1.2.3.7"  # 在这里指定 MFAWPF 的版本号
+          tag: "v1.2.3.8"  # 在这里指定 MFAWPF 的版本号
           out-file-path: MFA
           extract: true
 
