@@ -53,7 +53,7 @@
   },
   "click_boss1": {
     "recognition": "DirectHit",
-    "enable": false,
+    "enabled": false,
     "focus": true,
     "focus_tip": [
       "点击boss1"
@@ -73,7 +73,7 @@
   },
   "click_boss2": {
     "recognition": "DirectHit",
-    "enable": false,
+    "enabled": false,
     "focus": true,
     "focus_tip": [
       "点击boss2"
@@ -93,7 +93,7 @@
   },
   "click_boss3": {
     "recognition": "DirectHit",
-    "enable": false,
+    "enabled": false,
     "focus": true,
     "focus_tip": [
       "点击boss3"
@@ -113,7 +113,7 @@
   },
   "click_boss4": {
     "recognition": "DirectHit",
-    "enable": false,
+    "enabled": false,
     "focus": true,
     "focus_tip": [
       "点击boss4"
@@ -133,7 +133,7 @@
   },
   "click_boss5": {
     "recognition": "DirectHit",
-    "enable": false,
+    "enabled": false,
     "focus": true,
     "focus_tip": [
       "点击boss5"

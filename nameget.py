@@ -16,15 +16,17 @@ def loadlist():
     return all_name_list,roster
 def parse_team(namestr):
     team = []
+    unknown = []
     all_name_list,roster=loadlist()
     while namestr:
         item = roster.longest_prefix(namestr)
         if not item:
+            unknown.append(namestr[0])
             namestr = namestr[1:].lstrip()
         else:
             team.append(item.value)
             namestr = namestr[len(item.key):].lstrip()
-    return team
+    return team,''.join(unknown)
 
 def find_file_in_subdirs(target_filename, current_directory="."):
     """
@@ -48,9 +50,9 @@ def rewrite(sname,namestr,boss):
         namestr=namestr.replace("一星花凛","花凛")
         star=True
     
-    numlist=parse_team(namestr)    
+    numlist,unknown=parse_team(namestr)    
     if len(numlist)!=5:
-        return ""
+        return '无法识别'.join(unknown)
     with open("CharData\\characterIndexList.json", 'r', encoding='utf-8') as f:
         json_data = json.load(f)
     
