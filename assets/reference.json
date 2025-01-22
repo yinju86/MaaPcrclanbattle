@@ -49,6 +49,14 @@
       "click_boss3",
       "click_boss4",
       "click_boss5"
+    ],
+    "timeout": 5000,
+    "on_error":[
+      "click_boss1",
+      "click_boss2",
+      "click_boss3",
+      "click_boss4",
+      "click_boss5"
     ]
   },
   "click_boss1": {

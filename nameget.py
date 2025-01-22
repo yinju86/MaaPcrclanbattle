@@ -86,7 +86,8 @@ def rewrite(sname,namestr,boss):
         # 修改 "next" 字段中的内容
         if "next" in new_value:
             new_value["next"] = [f"{sname}{item}" for item in new_value["next"]]
-
+        if "on_error" in new_value:
+            new_value["on_error"] = [f"{sname}{item}" for item in new_value["on_error"]]
         updated_data[new_key] = new_value
     os.makedirs('resource/pipeline', exist_ok=True)
     with open(f'resource\\pipeline\\{sname}选人.json', 'w', encoding='utf-8') as f:
