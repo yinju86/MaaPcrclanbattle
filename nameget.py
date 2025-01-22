@@ -57,7 +57,7 @@ def rewrite(sname,namestr,boss):
         json_data = json.load(f)
     
 
-    reference[f"click_boss{boss}"]["enable"]=True
+    reference[f"click_boss{boss}"]["enabled"]=True
     result_dict = {item["unit_id"]: item["unit_name"] for item in json_data}
     for i,charnum in enumerate(numlist):
         text=result_dict[int(charnum+"01")]
