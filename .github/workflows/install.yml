@@ -90,8 +90,9 @@ jobs:
         with:
           repository: MaaXYZ/MaaFramework
           fileName: "MAA-win-${{ matrix.arch }}*"
-          version: "tag"
-          tag: "v2.4.2"  # 在这里指定 MaaFramework 的版本号
+          latest: true
+          #version: "tag"
+          #tag: "v2.4.2"  # 在这里指定 MaaFramework 的版本号
           out-file-path: "deps"
           extract: true
 
@@ -100,8 +101,9 @@ jobs:
         with:
           repository: SweetSmellFox/MFAWPF
           filename: MFAWPF*
-          version: "tag"
-          tag: "v1.2.3.8"  # 在这里指定 MFAWPF 的版本号
+          latest: true
+          #version: "tag"
+          #tag: "v1.2.3.8"  # 在这里指定 MFAWPF 的版本号
           out-file-path: MFA
           extract: true
 
