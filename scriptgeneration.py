@@ -81,7 +81,8 @@ def generation(stepname,stepfile):
         else:
             t2=stepfile[i][0]
             t1='0:02' if t2!='0:01' else '0:01'
-        output_s= output_s+f'''"{stepname}tc_{i}": {{
+        if tp!='6':
+            output_s= output_s+f'''"{stepname}tc_{i}": {{
     "recognition": "OCR",
     "post_delay":{tdelay*1000},
     "roi": [
@@ -211,6 +212,37 @@ def generation(stepname,stepfile):
     30,
     30
     ],"rate_limit":30,"timeout":500000,"next": ["{stepname}tc_{i+1}"]
+    }},
+    '''
+    else:
+        output_s= output_s+f'''"{stepname}tc_{i}": {{
+    "recognition": "OCR",
+    "post_delay":{tdelay*1000},
+    "roi": [
+    1075,
+    20,
+    48,
+    27
+    ],
+    "focus":true,
+    "focus_tip":"已识别{t}",
+    "expected": [
+    "{t}"
+    ],"pre_delay":15,"rate_limit":30,"timeout":500000,"next": [
+    "{stepname}tpc_{i}"
+    ],
+    "action": "DoNothing"
+    }},"{stepname}tpc_{i}": {{
+    "threshold": 0.90,
+    "recognition": "TemplateMatch",
+    
+    "focus":true,
+    "focus_tip":["自行目压"],
+    "action": "Click",
+    "template": [
+        "kz.png"
+    ],"pre_delay":50,"post_delay":50,"rate_limit":100,"timeout":5000000,
+    "next": ["{stepname}tc_{i+1}"]
     }},
     '''
     output_s=output_s.replace(f',"{stepname}tc_{len(stepfile)}"',f',"{stepname}p"').replace(f'''"timeout":500000,"next": ["{stepname}tc_{len(stepfile)}"]
