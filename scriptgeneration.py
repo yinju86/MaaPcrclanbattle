@@ -214,8 +214,8 @@ def generation(stepname,stepfile):
     ],"rate_limit":30,"timeout":500000,"next": ["{stepname}tc_{i+1}"]
     }},
     '''
-    else:
-        output_s= output_s+f'''"{stepname}tc_{i}": {{
+        else:
+            output_s= output_s+f'''"{stepname}tc_{i}": {{
     "recognition": "OCR",
     "post_delay":{tdelay*1000},
     "roi": [
@@ -262,6 +262,8 @@ def generation(stepname,stepfile):
     24
     ]
     }}}}''').replace('\n', '').replace('False', 'false').replace('True', 'true').replace("\t", "").strip()
+    with open(f'{stepname}_raw.txt', 'w', encoding='utf-8') as txt_file:
+        txt_file.write(output_s)
     data = json.loads(output_s)
 
     # 在保存文件前创建目录

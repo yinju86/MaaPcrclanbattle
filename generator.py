@@ -246,7 +246,7 @@ class MainWindow(QWidget):
 
             time_point = self.table.cellWidget(row, 1).currentText()
             if time_point == "卡帧":
-                time_point = 6
+                time_point = '6'
             value = float(self.table.item(row, 4).text())
             if value != 0:
                 td[row] = value  # 行号从1开始，值为非零的内容
@@ -286,21 +286,21 @@ class MainWindow(QWidget):
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
     def genbymanual(self):
-        try:
+        #try:
             c,t=self.output_content()
             self.usecontent(c,t)
-        except Exception as e:
-            msg = QMessageBox()
-            msg.setText(f'发生错误{e}')
-            msg.setIcon(QMessageBox.Information)
-            msg.exec_()
+        # except Exception as e:
+        #     msg = QMessageBox()
+        #     msg.setText(f'发生错误{e}')
+        #     msg.setIcon(QMessageBox.Information)
+        #     msg.exec_()
     def set_input(self, content, td):
         self.is_setting_input = True
         self.table.setRowCount(0)  # Clear existing rows
         for index, (time, time_point, status) in enumerate(content):
             self.add_row()  # Add a new row
             self.table.item(index, 0).setText(time)  # Set time
-            if time_point == 6:
+            if time_point == '6':
                 time_point = "卡帧"
             self.table.cellWidget(index, 1).setCurrentText(time_point)  # Set time point
             timed_input = self.table.item(index, 4)
