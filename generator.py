@@ -8,7 +8,6 @@ import sharecode
 import json
 from pathlib import Path
 import webbrowser
-import requests  # 添加导入
 import ota
 import nameget
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -57,6 +56,13 @@ class MainWindow(QWidget):
         readme_action.triggered.connect(self.open_readme)
         about_action = help_menu.addAction('关于')
         about_action.triggered.connect(self.show_about)
+
+        # 添加清空内容菜单
+        clear_menu = QMenu('清空内容', self)
+        self.menu_bar.addMenu(clear_menu)
+        
+        clear_action = clear_menu.addAction('清空所有内容')
+        clear_action.triggered.connect(self.clear_all_content)
 
         self.layout = QVBoxLayout()
         self.layout.setMenuBar(self.menu_bar)  # 将菜单栏添加到布局中
@@ -142,8 +148,9 @@ class MainWindow(QWidget):
 
         # 时点列
         time_point_combo = QComboBox()
-        for i in range(0, 6):
-            time_point_combo.addItem(str(i))
+        for i in range(0, 7):
+            display_text = "卡帧" if i == 6 else str(i)
+            time_point_combo.addItem(display_text)
         self.table.setCellWidget(button_row_index + 1, 1, time_point_combo)
 
         # 延时列
@@ -238,6 +245,8 @@ class MainWindow(QWidget):
 
 
             time_point = self.table.cellWidget(row, 1).currentText()
+            if time_point == "卡帧":
+                time_point = '6'
             value = float(self.table.item(row, 4).text())
             if value != 0:
                 td[row] = value  # 行号从1开始，值为非零的内容
@@ -277,20 +286,22 @@ class MainWindow(QWidget):
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
     def genbymanual(self):
-        try:
+        #try:
             c,t=self.output_content()
             self.usecontent(c,t)
-        except Exception as e:
-            msg = QMessageBox()
-            msg.setText(f'发生错误{e}')
-            msg.setIcon(QMessageBox.Information)
-            msg.exec_()
+        # except Exception as e:
+        #     msg = QMessageBox()
+        #     msg.setText(f'发生错误{e}')
+        #     msg.setIcon(QMessageBox.Information)
+        #     msg.exec_()
     def set_input(self, content, td):
         self.is_setting_input = True
         self.table.setRowCount(0)  # Clear existing rows
         for index, (time, time_point, status) in enumerate(content):
             self.add_row()  # Add a new row
             self.table.item(index, 0).setText(time)  # Set time
+            if time_point == '6':
+                time_point = "卡帧"
             self.table.cellWidget(index, 1).setCurrentText(time_point)  # Set time point
             timed_input = self.table.item(index, 4)
             timed_input.setText(str(td.get(index, 0.0)))  # Set delay, default to 0.0 if not in td
@@ -492,6 +503,32 @@ class MainWindow(QWidget):
     def _on_download_complete(self):
         # 完成提示
         QMessageBox.information(self, '提示', '角色更新完成')
+
+    def clear_all_content(self):
+        # 弹出确认对话框
+        reply = QMessageBox.question(self, '确认', 
+                                   '是否确定清空所有内容?',
+                                   QMessageBox.Yes | QMessageBox.No,
+                                   QMessageBox.No)
+        
+        if reply == QMessageBox.Yes:
+            # 清空表格
+            self.table.setRowCount(0)
+            self.add_row()  # 添加初始行
+            item = QTableWidgetItem("初始状态")
+            self.table.setItem(0, 0, item)
+            
+            # 清空角色输入
+            self.char_input.clear()
+            
+            # 清空轴名输入
+            self.input_box.clear()
+            
+            # 重置余刀剩余时间
+            self.remaining_time_input.setText("130")
+            
+            # 清空分享码
+            self.share_box.clear()
 
 class OtaThread(QThread):
     finished = pyqtSignal()
