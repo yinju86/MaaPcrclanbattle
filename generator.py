@@ -117,9 +117,15 @@ class MainWindow(QWidget):
         self.share_button.clicked.connect(self.show_popup)
         self.sharein_button= QPushButton('读取分享')
         self.sharein_button.clicked.connect(self.genbyshare)
+
+        # 添加不生成脚本复选框
+        self.no_script_checkbox = QCheckBox('不生成脚本')
+        self.no_script_checkbox.setChecked(False)
+
         self.share_layout.addWidget(self.label2)
         self.share_layout.addWidget(self.share_box)
         self.share_layout.addWidget(self.sharein_button)
+        self.share_layout.addWidget(self.no_script_checkbox)  # 添加复选框到布局中
         self.layout.addLayout(self.input_layout)
         
         self.layout.addWidget(self.output_button)
@@ -356,7 +362,26 @@ class MainWindow(QWidget):
             else:
                 c,t=sharecode.from_share(a)
                 self.set_input(c,t)
+            
+            # 根据复选框状态决定是否立即删除脚本
             self.usecontent(c,t)
+            if self.no_script_checkbox.isChecked():
+                # 获取脚本名称并删除对应文件
+                stepname = self.input_box.text() if self.input_box.text().strip() else f"{random.randint(100,999)}"
+                pipeline_path = Path('resource/pipeline') / f'{stepname}.json'
+                if pipeline_path.exists():
+                    pipeline_path.unlink()
+                
+                # 从interface.json中移除任务
+                try:
+                    with open('interface.json', 'r', encoding='utf-8') as f:
+                        data = json.load(f)
+                    data['task'] = [task for task in data['task'] if task.get('name') != stepname]
+                    with open('interface.json', 'w', encoding='utf-8') as f:
+                        json.dump(data, f, indent=4, ensure_ascii=False)
+                except:
+                    pass
+
         except Exception as e:
             msg = QMessageBox()
             msg.setText(f'分享码有误或使用方法错误{e}')
