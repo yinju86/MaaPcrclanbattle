@@ -92,7 +92,7 @@ def generation(stepname,stepfile):
     ],
     "action": "DoNothing","pre_delay":15,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}ljfdc","{stepname}ljfd"]}},
-    }},
+    }
     '''
     for i in range(len(stepfile)):
         t,tp,s,tdelay=stepfile[i]
@@ -282,8 +282,7 @@ def generation(stepname,stepfile):
     24
     ]
     }}}}''').replace('\n', '').replace('False', 'false').replace('True', 'true').replace("\t", "").strip()
-    with open(f'{stepname}_raw.txt', 'w', encoding='utf-8') as txt_file:
-        txt_file.write(output_s)
+
     data = json.loads(output_s)
 
     # 在保存文件前创建目录
