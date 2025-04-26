@@ -55,6 +55,26 @@ def generation(stepname,stepfile):
     0.95
     ],
     "action": "Click","pre_delay":800,"post_delay":15,"rate_limit":30,
+    "next": ["{stepname}ljfdc","{stepname}ljfd"]}},
+    "{stepname}ljfdc": {{
+    "recognition": "TemplateMatch",
+    "template": [
+    "ljfd.png"
+    ],
+    "threshold": [
+    0.95
+    ],
+    "action": "Click","pre_delay":20,"post_delay":15,"rate_limit":30,
+    "next": ["{stepname}tc_0"]}},
+    "{stepname}ljfd": {{
+    "recognition": "TemplateMatch",
+    "template": [
+    "ljfdo.png"
+    ],
+    "threshold": [
+    0.95
+    ],
+    "action": "DoNothing","pre_delay":20,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}tc_0"]}},
     "{stepname}autoo": {{
     "recognition": "TemplateMatch",
@@ -71,7 +91,7 @@ def generation(stepname,stepfile):
     0.85
     ],
     "action": "DoNothing","pre_delay":15,"post_delay":15,"rate_limit":30,
-    "next": ["{stepname}tc_0"]
+    "next": ["{stepname}ljfdc","{stepname}ljfd"]}},
     }},
     '''
     for i in range(len(stepfile)):
