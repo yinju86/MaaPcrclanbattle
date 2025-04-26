@@ -92,7 +92,6 @@ def generation(stepname,stepfile):
     ],
     "action": "DoNothing","pre_delay":15,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}ljfdc","{stepname}ljfd"]}},
-    }
     '''
     for i in range(len(stepfile)):
         t,tp,s,tdelay=stepfile[i]
