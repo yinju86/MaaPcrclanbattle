@@ -77,7 +77,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        arch: [aarch64, x86_64]
+        arch: [x86_64]     # 删除 aarch64，只保留 x86_64
       fail-fast: false
 
     steps:

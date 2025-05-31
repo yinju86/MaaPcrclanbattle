@@ -23,7 +23,7 @@ def updateCharacterIndexListByURL(url):
             savedBinFile.write(data)
             savedBinFile.close()
             connection = sqlite3.connect("CharData//Database.db")
-            unitDataCursor = connection.cursor().execute("SELECT a.* FROM unit_skill_data b, unit_data a WHERE a.unit_id = b.unit_id AND a.unit_id < 400000")
+            unitDataCursor = connection.cursor().execute("SELECT a.* FROM  v1_92fec1a41887606642d5ac246c109fc1cc9808b1a637e85ed8bbcd553756b07f a WHERE a.d6b5352a2780d85233a5077f80b0d680d2d2f1a357efe1dc7482fe9783e009a1 < 400000")
             characterIndexList = []
             for row in unitDataCursor:
                 characterIndexList.append({"unit_id": row[0], "unit_name": row[1]})
@@ -41,7 +41,7 @@ def updateAssetsByCharacterIndexList(characterIndexList):
     SixCharIDList = []
     try: 
         connection = sqlite3.connect("CharData//Database.db")
-        unitDataCursor = connection.cursor().execute("SELECT * from unlock_rarity_6 where unlock_flag = 1")
+        unitDataCursor = connection.cursor().execute('SELECT * from v1_14a0e744f20f6bd008829a0bf458c43e94df883dfd80c0549bcbffe805d34607 where "815d700b78022e0c8695f1d5991ab2191578a05b2462c7e6408ab0b2bf6a2e8f" = 6')
         for row in unitDataCursor:
             SixCharIDList.append(str(row[0])[:4])
     except:
@@ -98,13 +98,13 @@ def generateRefImageByCharacterIndexList(characterIndexList):
     for index in range(len(characterIndexList)):
         charId = str(characterIndexList[index]['unit_id'])[:4]
         try:
-            icon_imageOne = Image.open(os.path.join("CharData", "%s11.webp" % charId)).resize((60, 60), Image.ANTIALIAS)
+            icon_imageOne = Image.open(os.path.join("CharData", "%s11.webp" % charId)).resize((60, 60), Image.Resampling.LANCZOS)
             coordinateImageOne = ((2+3*62*index, 2))
             refImage.paste(icon_imageOne, coordinateImageOne)
-            icon_imageThree = Image.open(os.path.join("CharData", "%s31.webp" % charId)).resize((60, 60), Image.ANTIALIAS)
+            icon_imageThree = Image.open(os.path.join("CharData", "%s31.webp" % charId)).resize((60, 60), Image.Resampling.LANCZOS)
             coordinateImageThree = ((64+3*62*index, 2))
             refImage.paste(icon_imageThree, coordinateImageThree)
-            icon_imageSix = Image.open(os.path.join("CharData", "%s61.webp" % charId)).resize((60, 60), Image.ANTIALIAS)
+            icon_imageSix = Image.open(os.path.join("CharData", "%s61.webp" % charId)).resize((60, 60), Image.Resampling.LANCZOS)
             coordinateImageSix = ((126+3*62*index, 2))
             refImage.paste(icon_imageSix, coordinateImageSix)
         except Exception as e:

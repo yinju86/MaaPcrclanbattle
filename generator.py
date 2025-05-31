@@ -11,6 +11,7 @@ import webbrowser
 import ota
 import nameget
 from PyQt5.QtCore import QThread, pyqtSignal
+import requests  # 添加到文件顶部的imports中
 
 def get_version():
     try:
@@ -43,7 +44,7 @@ class MainWindow(QWidget):
         manage_action.triggered.connect(self.show_script_manager)
         
         # 添加更新菜单
-        update_menu = QMenu('更新(初次使用务必更新)', self)
+        update_menu = QMenu('更新(不使用自动选人无需更新)', self)
         self.menu_bar.addMenu(update_menu)
         
         update_action = update_menu.addAction('更新角色列表')
@@ -63,6 +64,13 @@ class MainWindow(QWidget):
         
         clear_action = clear_menu.addAction('清空所有内容')
         clear_action.triggered.connect(self.clear_all_content)
+
+        # 添加获取共享轴菜单
+        share_menu = QMenu('获取共享轴', self)
+        self.menu_bar.addMenu(share_menu)
+        
+        get_share_action = share_menu.addAction('获取在线轴')
+        get_share_action.triggered.connect(self.get_shared_scripts)
 
         self.layout = QVBoxLayout()
         self.layout.setMenuBar(self.menu_bar)  # 将菜单栏添加到布局中
@@ -122,14 +130,16 @@ class MainWindow(QWidget):
         self.no_script_checkbox = QCheckBox('不生成脚本')
         self.no_script_checkbox.setChecked(False)
 
+        # 创建一个水平布局来放置生成脚本和一键分享按钮
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.output_button)
+        button_layout.addWidget(self.share_button)
+        self.layout.addLayout(button_layout)
+
         self.share_layout.addWidget(self.label2)
         self.share_layout.addWidget(self.share_box)
         self.share_layout.addWidget(self.sharein_button)
-        self.share_layout.addWidget(self.no_script_checkbox)  # 添加复选框到布局中
-        self.layout.addLayout(self.input_layout)
-        
-        self.layout.addWidget(self.output_button)
-        self.layout.addWidget(self.share_button)
+        self.share_layout.addWidget(self.no_script_checkbox)
         self.layout.addLayout(self.share_layout)
         self.setLayout(self.layout)
 
@@ -555,6 +565,86 @@ class MainWindow(QWidget):
             # 清空分享码
             self.share_box.clear()
 
+
+
+    def get_shared_scripts(self):
+        try:
+            # 发送请求获取共享轴数据
+            url = "https://gist.githubusercontent.com/yinju86/c9b79ca9910bb8f853c6f0addc94f9a6/raw/sharecode.txt"
+            response = requests.get(url, timeout=10)
+            response.encoding = 'utf-8'
+            
+            if response.status_code != 200:
+                raise Exception("网络请求失败")
+
+            # 获取现有脚本名称列表
+            existing_scripts = set()
+            try:
+                with open('interface.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    for task in data.get('task', []):
+                        existing_scripts.add(task.get('name', ''))
+            except:
+                existing_scripts = set()
+
+            # 处理每一行共享码
+            success_count = 0
+            skip_count = 0
+            for line in response.text.strip().split('\n'):
+                if not line.strip():
+                    continue
+                    
+                try:
+                    parts = line.split(':')
+                    if len(parts) < 2:
+                        continue
+                        
+                    script_name = parts[0]
+                    
+                    # 检查是否存在同名脚本
+                    if script_name in existing_scripts:
+                        skip_count += 1
+                        continue
+
+                    # 根据共享码格式调用相应的处理逻辑
+                    if len(parts) == 2:
+                        c, t = sharecode.from_share(parts[1])
+                    elif len(parts) == 3:
+                        c, t = sharecode.from_share(parts[2])
+                    
+                    # 生成脚本
+                    stepname = script_name
+                    scriptgeneration.generation(stepname=stepname, stepfile=self.format_content(c, t))
+                    success_count += 1
+                    existing_scripts.add(script_name)
+                    
+                except Exception as e:
+                    print(f"处理共享码失败: {line}, 错误: {str(e)}")
+                    continue
+
+            # 显示处理结果
+            msg = QMessageBox()
+            msg.setWindowTitle('处理结果')
+            msg.setText(f'成功生成 {success_count} 个脚本\n跳过 {skip_count} 个已存在的脚本')
+            msg.setIcon(QMessageBox.Information)
+            msg.exec_()
+            
+        except Exception as e:
+            msg = QMessageBox()
+            msg.setText(f'获取共享轴失败：{str(e)}')
+            msg.setIcon(QMessageBox.Warning)
+            msg.exec_()
+
+    def format_content(self, content, td):
+        output_text = []
+        for i, (t, tp, s) in enumerate(content):
+            if i == 0:
+                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s, td.get(i, 0.015)))
+            else:
+                prev_status = content[i-1][2]
+                status_diff = [x != y for x, y in zip(s, prev_status)]
+                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff, td.get(i, 0.015)))
+        return output_text
 class OtaThread(QThread):
     finished = pyqtSignal()
     
