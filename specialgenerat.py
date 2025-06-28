@@ -3,7 +3,7 @@ import os
 
 
 
-def generation(stepname,stepfile,namellit):
+def generation(stepname,stepfile,namelist):
     ubflag=[310,470,630,790,950]
     output_s=f'''{{
     "{stepname}start": {{
@@ -106,7 +106,7 @@ def generation(stepname,stepfile,namellit):
     "recognition": "DirectHit","pre_delay":300,"post_delay":500,
     "action": "Click",
     "focus":true,
-    "focus_tip":"点击{nameist[n-1]}",
+    "focus_tip":"点击{namelist[n-1]}",
     "target": [
     {140+n*160},
     550,
@@ -147,7 +147,7 @@ def generation(stepname,stepfile,namellit):
 
     ],
     "focus":true,
-    "focus_tip":"{nameist[n-1]}已ub",
+    "focus_tip":"{namelist[n-1]}已ub",
     "inverse": true,
     "action": "DoNothing",
     "template": [
@@ -165,7 +165,7 @@ def generation(stepname,stepfile,namellit):
     "recognition": "DirectHit","pre_delay":150,"post_delay":150,
     "action": "Click",
     "focus":true,
-    "focus_tip":"开auto,等待{nameist[n-1]}自动ub",
+    "focus_tip":"开auto,等待{namelist[n-1]}自动ub",
     "target": [
     1195,
     537,
@@ -183,7 +183,7 @@ def generation(stepname,stepfile,namellit):
         20
     ],
     "focus":true,
-    "focus_tip":"{nameist[n-1]}已自动ub",
+    "focus_tip":"{namelist[n-1]}已自动ub",
     "action": "DoNothing",
     "template": [
         "aub.png"
@@ -299,5 +299,5 @@ def generation(stepname,stepfile,namellit):
 if __name__ == "__main__":
     stepfile = '''s114k1254435123s05935423a13542143532143k23313452315425433154234512335a142s029353253a14254324352331a453243124a512513244513253451234251435244351235a4254a124451254'''
      # Example stepfile, replace with actual stepfile
-    nameist=['雪','狐','N','水','春']
-    generation('5手动', stepfile,nameist)  # Example usage, replace with actual stepfile
+    namelist=['雪','狐','N','水','春']
+    generation('5手动', stepfile,namelist)  # Example usage, replace with actual stepfile

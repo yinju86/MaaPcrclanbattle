@@ -321,7 +321,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             stepname = self.input_box.text()
             
             # 生成脚本
-            scriptgeneration.generation(stepname, stepfile=content, namelist=td)
+            specialgenerat.generation(stepname, stepfile=content, namelist=td)
             msg = QMessageBox()
             msg.setText('已生成单次UB脚本')
             msg.setIcon(QMessageBox.Information)
@@ -388,12 +388,15 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             # 单次UB分享逻辑，留空待补充
             text = self.text_edit.toPlainText()
             # TODO: 生成分享码
+            name1 = self.input_box.text() if self.input_box.text().strip() else f"{random.randint(100,999)}"
+            aa,bb=self.output_content()
+            bb=self.char_input.text()
             dialog = QDialog(self)
             dialog.setWindowTitle('分享码')
             layout = QVBoxLayout()
             text_edit = QTextEdit(dialog)
             text_edit.setReadOnly(True)
-            text_edit.setText("单次UB分享码逻辑待补充")
+            text_edit.setText(f"{name1}#{aa}#{bb}")
             layout.addWidget(text_edit)
             dialog.setLayout(layout)
             dialog.exec_()
@@ -423,14 +426,19 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
     def genbyshare(self):
         a = self.share_box.text()
         try:
-            if ':' not in a:
+            if '#' in a:
                 # 自动切换到单次UB
                 if not self.is_text_mode:
                     self.switch_mode()
                 # 解析单次UB分享码
-                self.text_edit.setPlainText(a[len("TEXTMODE:"):])
+                stepname, content, td = a.split('#')
+                self.text_edit.setPlainText(content)
+                self.input_box.setText(stepname)
+                self.char_input.setText(td)
+                namelist = td.split(' ')
+                specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
                 # TODO: 解析内容并生成脚本
-                QMessageBox.information(self, "提示", f"已生成{0}")
+                QMessageBox.information(self, "提示", f"已生成")
                 return
             else:
                 # 自动切换到开关SET模式
@@ -627,7 +635,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             
             # 清空角色输入
             self.char_input.clear()
-            
+            self.text_edit.clear()  # 清空文本编辑器
             # 清空轴名输入
             self.input_box.clear()
             
