@@ -270,8 +270,6 @@ def generation(stepname,stepfile,namelist):
 
     output_s += "\n".join(actions)
     output_s += "\n}"
-    with open(f'resource/pipeline/{stepname}.json', 'w', encoding='utf-8') as txt_file:
-        txt_file.write(output_s)
 
     data = json.loads(output_s)
 
