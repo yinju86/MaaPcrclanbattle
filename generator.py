@@ -12,7 +12,8 @@ import ota
 import nameget
 from PyQt5.QtCore import QThread, pyqtSignal
 import requests  # 添加到文件顶部的imports中
-
+import specialgenerat
+import re
 def get_version():
     try:
         install_path = Path(__file__).parent / "install"
@@ -26,16 +27,23 @@ def get_version():
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
-        self.is_setting_input=False
+        self.is_setting_input = False
+        self.is_text_mode = False  # 模式标志：False为表格，True为文本
         self.initUI()
-        
+
     def initUI(self):
         self.setWindowTitle('轴输入窗口')
         self.setGeometry(100, 100, 1000, 600)
 
         # 添加菜单栏
         self.menu_bar = QMenuBar(self)
-        
+
+        # 添加模式切换菜单
+        mode_menu = QMenu('模式切换', self)
+        self.menu_bar.addMenu(mode_menu)
+        self.switch_mode_action = mode_menu.addAction('切换为单次UB/开关SET模式')
+        self.switch_mode_action.triggered.connect(self.switch_mode)
+
         # 添加脚本管理菜单
         script_menu = QMenu('脚本管理', self)
         self.menu_bar.addMenu(script_menu)
@@ -44,11 +52,10 @@ class MainWindow(QWidget):
         manage_action.triggered.connect(self.show_script_manager)
         
         # 添加更新菜单
-        update_menu = QMenu('更新(不使用自动选人无需更新)', self)
-        self.menu_bar.addMenu(update_menu)
+        #update_menu = QMenu('更新(不使用自动选人无需更新)', self)
+        #self.menu_bar.addMenu(update_menu)
         
-        update_action = update_menu.addAction('更新角色列表')
-        update_action.triggered.connect(self.update_character_list)
+        
         
         help_menu = QMenu('帮助', self)
         self.menu_bar.addMenu(help_menu)
@@ -66,27 +73,38 @@ class MainWindow(QWidget):
         clear_action.triggered.connect(self.clear_all_content)
 
         # 添加获取共享轴菜单
-        share_menu = QMenu('获取共享轴', self)
+        share_menu = QMenu('获取在线内容', self)
         self.menu_bar.addMenu(share_menu)
         
         get_share_action = share_menu.addAction('获取在线轴')
         get_share_action.triggered.connect(self.get_shared_scripts)
-
+        update_action = share_menu.addAction('更新角色列表')
+        update_action.triggered.connect(self.update_character_list)
         self.layout = QVBoxLayout()
         self.layout.setMenuBar(self.menu_bar)  # 将菜单栏添加到布局中
 
+        # 开关SET模式控件
         self.table = QTableWidget()
-        self.table.setColumnCount(5)  # 时间、时点、状态、操作
-        self.table.setHorizontalHeaderLabels(['时间', '?号位UB后', '状态', '操作','延时(秒)'])
-        #self.table.setRowCount(1)  # 初始有一行
-
-        self.add_row()  # 添加初始行
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(['时间', '?号位UB后', '状态', '操作', '延时(秒)'])
+        self.add_row()
         item = QTableWidgetItem("初始状态")
-        
-        self.table.setItem(0,0,item)
-
+        self.table.setItem(0, 0, item)
         self.layout.addWidget(self.table)
-        
+
+        # 单次UB控件（初始隐藏）
+        self.text_edit = QTextEdit()
+        self.text_edit.setPlaceholderText('''在这里输入单次UB的文本内容，格式为：
+按顺序填写ub角色,支持角色名或数字(角色位置顺序),
+避免使用511等带数字名称和与指令字母冲突内容
+支持指令(不要加号):
+a+角色名---auto开
+d+一位数---delay延时(秒)
+s+三位数---等待游戏内倒计时至至该秒数
+k---卡帧,卡帧结束请自行set后点击设定键''')
+        self.text_edit.hide()
+        self.layout.addWidget(self.text_edit)
+
         # 创建角色输入布局
         self.char_layout = QHBoxLayout()
         self.char_label = QLabel("使用角色：")
@@ -143,6 +161,20 @@ class MainWindow(QWidget):
         self.layout.addLayout(self.share_layout)
         self.setLayout(self.layout)
 
+    def switch_mode(self):
+        if not self.is_text_mode:
+            self.table.hide()
+            self.text_edit.show()
+            self.char_input.clear()
+            self.char_input.setPlaceholderText("必须按顺序填写角色名,与轴中名字必须一一对应,且用空格隔开")
+            self.is_text_mode = True
+        else:
+            self.text_edit.hide()
+            self.table.show()
+            self.char_input.clear()
+            self.char_input.setPlaceholderText("无需自动选人可不填写,默认借第一位,可使用昵称")
+            self.is_text_mode = False
+            
     def add_row(self, button_row_index=None):
     # 如果没有指定行，从按钮信号中获取行
         
@@ -225,56 +257,77 @@ class MainWindow(QWidget):
 
 
     def output_content(self):
-        content = []
-        td = {}
-        
-        # 读取输入框的值并计算差值
-        remaining_time = int(self.remaining_time_input.text())
-        time_difference = 130 - remaining_time
-        if time_difference>30:
-            time_difference=time_difference-40
-
-        for row in range(self.table.rowCount()):
-            time_item = self.table.item(row, 0)
-            time = time_item.text().replace("初始状态", "124")
+        if self.is_text_mode:
+            text = self.text_edit.toPlainText()
+            namelist=self.char_input.text()
+            if not namelist.strip():
+                QMessageBox.warning(self, "警告", "请填写角色名或昵称")
+                return
+            namelist = namelist.split(' ')
+            if len(namelist) !=5:
+                QMessageBox.warning(self, "警告", "角色名数量不正确，请确保填写5个角色名")
+                return
+            text = self.process_text(text, namelist)
+            return text,namelist
+        else:
+            content = []
+            td = {}
             
-            # 将时间值转换为秒数
-            time_value = int(time)
-            if 1 <= time_value <= 59:
-                time_in_seconds = time_value
-            elif 100 <= time_value <= 130:
-                time_in_seconds = (time_value - 100) + 60
-            
-            # 减去差值
-            adjusted_time_in_seconds = time_in_seconds - time_difference
-            
-            # 如果调整后的时间小于1秒，则跳过该行
-            if adjusted_time_in_seconds < 1:
-                continue
-            
-            # 将秒数转换回时间格式
-            if adjusted_time_in_seconds <= 59:
-                adjusted_time = f"{adjusted_time_in_seconds:03}"
-            else:
-                adjusted_time = str(adjusted_time_in_seconds + 40)
+            # 读取输入框的值并计算差值
+            remaining_time = int(self.remaining_time_input.text())
+            time_difference = 130 - remaining_time
+            if time_difference>30:
+                time_difference=time_difference-40
 
-
-
-            time_point = self.table.cellWidget(row, 1).currentText()
-            if time_point == "卡帧":
-                time_point = '6'
-            value = float(self.table.item(row, 4).text())
-            if value != 0:
-                td[row] = value  # 行号从1开始，值为非零的内容
-            status = []
-            status_layout = self.table.cellWidget(row, 2)
-            for checkbox in status_layout.findChildren(QCheckBox):
-                status.append(checkbox.isChecked())
-            content.append((adjusted_time, time_point, status))
-        
-        return content, td
+            for row in range(self.table.rowCount()):
+                time_item = self.table.item(row, 0)
+                time = time_item.text().replace("初始状态", "124")
+                
+                # 将时间值转换为秒数
+                time_value = int(time)
+                if 1 <= time_value <= 59:
+                    time_in_seconds = time_value
+                elif 100 <= time_value <= 130:
+                    time_in_seconds = (time_value - 100) + 60
+                
+                # 减去差值
+                adjusted_time_in_seconds = time_in_seconds - time_difference
+                
+                # 如果调整后的时间小于1秒，则跳过该行
+                if adjusted_time_in_seconds < 1:
+                    continue
+                
+                # 将秒数转换回时间格式
+                if adjusted_time_in_seconds <= 59:
+                    adjusted_time = f"{adjusted_time_in_seconds:03}"
+                else:
+                    adjusted_time = str(adjusted_time_in_seconds + 40)
+                time_point = self.table.cellWidget(row, 1).currentText()
+                if time_point == "卡帧":
+                    time_point = '6'
+                value = float(self.table.item(row, 4).text())
+                if value != 0:
+                    td[row] = value  # 行号从1开始，值为非零的内容
+                status = []
+                status_layout = self.table.cellWidget(row, 2)
+                for checkbox in status_layout.findChildren(QCheckBox):
+                    status.append(checkbox.isChecked())
+                content.append((adjusted_time, time_point, status))
+            
+            return content, td
     
     def usecontent(self,content,td={}):
+        if self.is_text_mode:
+            stepname = self.input_box.text()
+            
+            # 生成脚本
+            scriptgeneration.generation(stepname, stepfile=content, namelist=td)
+            msg = QMessageBox()
+            msg.setText('已生成单次UB脚本')
+            msg.setIcon(QMessageBox.Information)
+            msg.exec_()
+            return
+        
         output_text = []
         for i, (t, tp, s) in enumerate(content):
             if i == 0 :
@@ -303,8 +356,12 @@ class MainWindow(QWidget):
         msg.exec_()
     def genbymanual(self):
         #try:
-            c,t=self.output_content()
-            self.usecontent(c,t)
+
+        c,t=self.output_content()
+        self.usecontent(c,t)
+
+
+
         # except Exception as e:
         #     msg = QMessageBox()
         #     msg.setText(f'发生错误{e}')
@@ -327,71 +384,86 @@ class MainWindow(QWidget):
                 checkbox.setChecked(status[i])  # Set checkbox state
         self.is_setting_input = False
     def show_popup(self):
-        # 创建自定义的对话框
-        c,t=self.output_content()
-        code=sharecode.to_share(c,t)
-        dialog = QDialog(self)
-        dialog.setWindowTitle('分享码')
-        
-        # 创建垂直布局
-        layout = QVBoxLayout()
-        
-        # 分享码文本框
-        text_edit = QTextEdit(dialog)
-        text_edit.setReadOnly(True)  # 设置为只读模式，防止用户编辑
-        input_text = self.input_box.text()
-        stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
-        char=self.char_input.text()
-        if char:
-            text_edit.setText(f"{stepname}:{char}:{code}")
+        if self.is_text_mode:
+            # 单次UB分享逻辑，留空待补充
+            text = self.text_edit.toPlainText()
+            # TODO: 生成分享码
+            dialog = QDialog(self)
+            dialog.setWindowTitle('分享码')
+            layout = QVBoxLayout()
+            text_edit = QTextEdit(dialog)
+            text_edit.setReadOnly(True)
+            text_edit.setText("单次UB分享码逻辑待补充")
+            layout.addWidget(text_edit)
+            dialog.setLayout(layout)
+            dialog.exec_()
         else:
-            text_edit.setText(f"{stepname}:{code}")  # 设置要显示的文本
-        layout.addWidget(text_edit)
-        
-        # 添加共享网址提示
-        url_label = QLabel('共享网址：<a href="https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz">https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz</a>')
-        url_label.setOpenExternalLinks(True)  # 允许点击链接
-        url_label.setTextFormat(Qt.RichText)  # 使用富文本格式以支持链接
-        layout.addWidget(url_label)
-        
-        dialog.setLayout(layout)
-        dialog.exec_()
-    def genbyshare(self):
-        a=self.share_box.text()
-        try:
-            if ":" in a:
-                a=a.split(":")
-                if len(a)==2:
-                    c,t=sharecode.from_share(a[1])
-                    self.input_box.setText(a[0])
-                elif len(a)==3:
-                    c,t=sharecode.from_share(a[2])
-                    self.char_input.setText(a[1])
-                    self.input_box.setText(a[0])
-                self.set_input(c,t)
+            c,t=self.output_content()
+            code=sharecode.to_share(c,t)
+            dialog = QDialog(self)
+            dialog.setWindowTitle('分享码')
+            layout = QVBoxLayout()
+            text_edit = QTextEdit(dialog)
+            text_edit.setReadOnly(True)
+            input_text = self.input_box.text()
+            stepname = input_text if input_text.strip() else f"{random.randint(100,999)}"
+            char = self.char_input.text()
+            if char:
+                text_edit.setText(f"{stepname}:{char}:{code}")
             else:
-                c,t=sharecode.from_share(a)
-                self.set_input(c,t)
-            
-            # 根据复选框状态决定是否立即删除脚本
-            self.usecontent(c,t)
-            if self.no_script_checkbox.isChecked():
-                # 获取脚本名称并删除对应文件
-                stepname = self.input_box.text() if self.input_box.text().strip() else f"{random.randint(100,999)}"
-                pipeline_path = Path('resource/pipeline') / f'{stepname}.json'
-                if pipeline_path.exists():
-                    pipeline_path.unlink()
-                
-                # 从interface.json中移除任务
-                try:
-                    with open('interface.json', 'r', encoding='utf-8') as f:
-                        data = json.load(f)
-                    data['task'] = [task for task in data['task'] if task.get('name') != stepname]
-                    with open('interface.json', 'w', encoding='utf-8') as f:
-                        json.dump(data, f, indent=4, ensure_ascii=False)
-                except:
-                    pass
+                text_edit.setText(f"{stepname}:{code}")
+            layout.addWidget(text_edit)
+            url_label = QLabel('共享网址：<a href="https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz">https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz</a>')
+            url_label.setOpenExternalLinks(True)
+            url_label.setTextFormat(Qt.RichText)
+            layout.addWidget(url_label)
+            dialog.setLayout(layout)
+            dialog.exec_()
 
+    def genbyshare(self):
+        a = self.share_box.text()
+        try:
+            if ':' not in a:
+                # 自动切换到单次UB
+                if not self.is_text_mode:
+                    self.switch_mode()
+                # 解析单次UB分享码
+                self.text_edit.setPlainText(a[len("TEXTMODE:"):])
+                # TODO: 解析内容并生成脚本
+                QMessageBox.information(self, "提示", f"已生成{0}")
+                return
+            else:
+                # 自动切换到开关SET模式
+                if self.is_text_mode:
+                    self.switch_mode()
+                # ...existing code...
+                if ":" in a:
+                    a = a.split(":")
+                    if len(a) == 2:
+                        c, t = sharecode.from_share(a[1])
+                        self.input_box.setText(a[0])
+                    elif len(a) == 3:
+                        c, t = sharecode.from_share(a[2])
+                        self.char_input.setText(a[1])
+                        self.input_box.setText(a[0])
+                    self.set_input(c, t)
+                else:
+                    c, t = sharecode.from_share(a)
+                    self.set_input(c, t)
+                self.usecontent(c, t)
+                if self.no_script_checkbox.isChecked():
+                    stepname = self.input_box.text() if self.input_box.text().strip() else f"{random.randint(100,999)}"
+                    pipeline_path = Path('resource/pipeline') / f'{stepname}.json'
+                    if pipeline_path.exists():
+                        pipeline_path.unlink()
+                    try:
+                        with open('interface.json', 'r', encoding='utf-8') as f:
+                            data = json.load(f)
+                        data['task'] = [task for task in data['task'] if task.get('name') != stepname]
+                        with open('interface.json', 'w', encoding='utf-8') as f:
+                            json.dump(data, f, indent=4, ensure_ascii=False)
+                    except:
+                        pass
         except Exception as e:
             msg = QMessageBox()
             msg.setText(f'分享码有误或使用方法错误{e}')
@@ -565,7 +637,20 @@ class MainWindow(QWidget):
             # 清空分享码
             self.share_box.clear()
 
-
+    def process_text(self,text, namelist):
+        # 1. 替换角色名为数字
+        for idx, name in enumerate(namelist, 1):
+            text = text.replace(name, str(idx))
+        # 2. 替换正则 (\d)\s？–?\(？auto\) 为 a$1
+        # 支持多种括号和空格
+        text = re.sub(r'(\d)\s*[-–－]?\s*[\(\（]?[aA][uU][tT][oO][\)\）]?', r'a\1', text)
+        # 3. 删除所有括号及括号内内容
+        text = re.sub(r'[\(\（][^\)\）]*[\)\）]', '', text)
+        # 4. 删除所有空格和换行
+        text = re.sub(r'\s+', '', text)
+        text = re.sub(r'\n', '', text)
+        text = re.sub(r'、', '', text)
+        return text
 
     def get_shared_scripts(self):
         try:

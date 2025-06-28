@@ -64,7 +64,7 @@ def generation(stepname,stepfile):
     "threshold": [
     0.95
     ],
-    "action": "Click","pre_delay":20,"post_delay":15,"rate_limit":30,
+    "action": "Click","pre_delay":800,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}tc_0"]}},
     "{stepname}ljfd": {{
     "recognition": "TemplateMatch",
