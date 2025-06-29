@@ -3,7 +3,7 @@ import os
 
 
 
-def generation(stepname,stepfile,namelist,speed):
+def generation(stepname,stepfile,namelist,speed=200):
     ubflag=[310,470,630,790,950]
     output_s=f'''{{
     "{stepname}start": {{
