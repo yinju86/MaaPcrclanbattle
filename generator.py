@@ -355,18 +355,18 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         msg.setIcon(QMessageBox.Information)
         msg.exec_()
     def genbymanual(self):
-        #try:
+        try:
 
-        c,t=self.output_content()
-        self.usecontent(c,t)
+            c,t=self.output_content()
+            self.usecontent(c,t)
 
 
 
-        # except Exception as e:
-        #     msg = QMessageBox()
-        #     msg.setText(f'发生错误{e}')
-        #     msg.setIcon(QMessageBox.Information)
-        #     msg.exec_()
+        except Exception as e:
+             msg = QMessageBox()
+             msg.setText(f'发生错误{e}')
+             msg.setIcon(QMessageBox.Information)
+             msg.exec_()
     def set_input(self, content, td):
         self.is_setting_input = True
         self.table.setRowCount(0)  # Clear existing rows
@@ -657,7 +657,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         # 4. 删除所有空格和换行
         text = re.sub(r'\s+', '', text)
         text = re.sub(r'\n', '', text)
-        text = re.sub(r'、', '', text)
+        text = re.sub(r'[、-–－]', '', text)
         return text
 
     def get_shared_scripts(self):

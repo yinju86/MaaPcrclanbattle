@@ -235,12 +235,12 @@ def generation(stepname,stepfile,namelist):
             j += 1
         elif c == 'k':
             actions.append(f'''"{stepname}{j}": 
-                           {{ "recognition": "TemplateMatch", "threshold": 0.90, 
+                           {{ "recognition": "TemplateMatch", "threshold": 0.75, 
                            "action": "Click", "template": ["kz.png"], "pre_delay": 250, "post_delay": 250, "rate_limit": 100, "timeout": 5000000,
                             "next": ["{stepname}{j}_e"] 
                            }},''')
             actions.append(f'''"{stepname}{j}_e": 
-                           {{ "recognition": "TemplateMatch", "threshold": 0.90, "focus": true, "focus_tip": ["自行目压,目押完毕点击 设定"], 
+                           {{ "recognition": "TemplateMatch", "threshold": 0.75, "focus": true, "focus_tip": ["自行目压,目押完毕点击 设定"], 
                            "action": "Click", "template": ["kz.png"], "pre_delay": 250, "post_delay": 250, "rate_limit": 100, "timeout": 5000000,
                             "next": ["{stepname}{j}gb"] 
                            }},''')
