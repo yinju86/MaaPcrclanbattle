@@ -82,7 +82,16 @@ class MainWindow(QWidget):
         update_action.triggered.connect(self.update_character_list)
         self.layout = QVBoxLayout()
         self.layout.setMenuBar(self.menu_bar)  # 将菜单栏添加到布局中
+        speed_menu = QMenu('识别速度', self)
+        self.menu_bar.addMenu(speed_menu)
+        self.speed = 200  # 初始值为200
 
+        fast_action = speed_menu.addAction('快速识别')
+        fast_action.triggered.connect(lambda: self.set_speed(100))
+        medium_action = speed_menu.addAction('中速识别')
+        medium_action.triggered.connect(lambda: self.set_speed(200))
+        slow_action = speed_menu.addAction('慢速识别')
+        slow_action.triggered.connect(lambda: self.set_speed(300))
         # 开关SET模式控件
         self.table = QTableWidget()
         self.table.setColumnCount(5)
@@ -321,7 +330,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             stepname = self.input_box.text()
             
             # 生成脚本
-            specialgenerat.generation(stepname, stepfile=content, namelist=td)
+            specialgenerat.generation(stepname, stepfile=content, namelist=td, speed=self.speed)
             msg = QMessageBox()
             msg.setText('已生成单次UB脚本')
             msg.setIcon(QMessageBox.Information)
@@ -657,7 +666,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         # 4. 删除所有空格和换行
         text = re.sub(r'\s+', '', text)
         text = re.sub(r'\n', '', text)
-        text = re.sub(r'[、-–－]', '', text)
+        text = re.sub(r'[、\-–－]', '', text)
         return text
 
     def get_shared_scripts(self):
@@ -727,7 +736,9 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             msg.setText(f'获取共享轴失败：{str(e)}')
             msg.setIcon(QMessageBox.Warning)
             msg.exec_()
-
+    def set_speed(self, value):
+        self.speed = value
+        QMessageBox.information(self, "识别速度", f"已设置为{'快速' if value==100 else '中速' if value==200 else '慢速'}识别（{value}）\n计算机性能差的推荐使用快速识别")
     def format_content(self, content, td):
         output_text = []
         for i, (t, tp, s) in enumerate(content):

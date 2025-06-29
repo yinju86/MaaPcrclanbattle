@@ -3,7 +3,7 @@ import os
 
 
 
-def generation(stepname,stepfile,namelist):
+def generation(stepname,stepfile,namelist,speed):
     ubflag=[310,470,630,790,950]
     output_s=f'''{{
     "{stepname}start": {{
@@ -131,7 +131,7 @@ def generation(stepname,stepfile,namelist):
     "action": "DoNothing",
     "template": [
         "mfd.png"
-    ],"pre_delay":200,"post_delay":200,"rate_limit":400,"timeout":500000,"next": [
+    ],"pre_delay":{speed},"post_delay":{speed},"rate_limit":{2*speed},"timeout":500000,"next": [
     "{stepname}{j}_done"
     ]
     }},''')
@@ -152,7 +152,7 @@ def generation(stepname,stepfile,namelist):
     "action": "DoNothing",
     "template": [
         "mfd.png"
-    ],"pre_delay":200,"post_delay":200,"rate_limit":400,"timeout":500000,"next": [
+    ],"pre_delay":{speed},"post_delay":{speed},"rate_limit":{2*speed},"timeout":500000,"next": [
     "{stepname}{j+1}"
     ]
     }},''')
@@ -162,7 +162,7 @@ def generation(stepname,stepfile,namelist):
             n = int(s[i+1])
             actions.append(f'''"{stepname}{j}": 
                            {{
-    "recognition": "DirectHit","pre_delay":150,"post_delay":150,
+    "recognition": "DirectHit","pre_delay":{speed},"post_delay":{speed},
     "action": "Click",
     "focus":true,
     "focus_tip":"开auto,等待{namelist[n-1]}自动ub",
@@ -171,7 +171,7 @@ def generation(stepname,stepfile,namelist):
     537,
     30,
     30
-    ],"rate_limit":1000,"timeout":500000,"next": ["{stepname}{j}check"]
+    ],"rate_limit":{speed*3},"timeout":500000,"next": ["{stepname}{j}check"]
     }},''')
             actions.append(f'''"{stepname}{j}check": {{
                            "threshold": 0.90,
@@ -187,12 +187,12 @@ def generation(stepname,stepfile,namelist):
     "action": "DoNothing",
     "template": [
         "aub.png"
-    ],"pre_delay":150,"post_delay":150,"rate_limit":1000,"timeout":500000,"next": [
+    ],"pre_delay":{speed},"post_delay":{speed},"rate_limit":{speed*3},"timeout":500000,"next": [
     "{stepname}{j}done"
     ]
                             }},''')
             actions.append(f'''"{stepname}{j}done": {{
-    "recognition": "DirectHit","pre_delay":15,"post_delay":550,
+    "recognition": "DirectHit","pre_delay":{speed},"post_delay":{speed*2},
     "action": "Click",
     "focus":true,
     "focus_tip":"关auto",
@@ -201,7 +201,7 @@ def generation(stepname,stepfile,namelist):
     537,
     30,
     30
-    ],"rate_limit":1030,"timeout":500000,"next": ["{stepname}{j+1}"]
+    ],"rate_limit":{speed*3},"timeout":500000,"next": ["{stepname}{j+1}"]
     }},''')
             i += 2
             j+= 1
@@ -236,16 +236,16 @@ def generation(stepname,stepfile,namelist):
         elif c == 'k':
             actions.append(f'''"{stepname}{j}": 
                            {{ "recognition": "TemplateMatch", "threshold": 0.75, 
-                           "action": "Click", "template": ["kz.png"], "pre_delay": 250, "post_delay": 250, "rate_limit": 100, "timeout": 5000000,
+                           "action": "Click", "template": ["kz.png"], "pre_delay": {speed}, "post_delay": {speed}, "rate_limit": 100, "timeout": 5000000,
                             "next": ["{stepname}{j}_e"] 
                            }},''')
             actions.append(f'''"{stepname}{j}_e": 
                            {{ "recognition": "TemplateMatch", "threshold": 0.75, "focus": true, "focus_tip": ["自行目压,目押完毕点击 设定"], 
-                           "action": "Click", "template": ["kz.png"], "pre_delay": 250, "post_delay": 250, "rate_limit": 100, "timeout": 5000000,
+                           "action": "Click", "template": ["kz.png"], "pre_delay": {speed}, "post_delay": {speed}, "rate_limit": 100, "timeout": 5000000,
                             "next": ["{stepname}{j}gb"] 
                            }},''')
-            actions.append(f'"{stepname}{j}gb": {{ "recognition": "TemplateMatch", "pre_delay": 100, "post_delay": 100,"template": ["gb.png"], "action": "Click", "next": ["{stepname}{j}done"] }},')
-            actions.append(f'"{stepname}{j}done": {{ "recognition": "TemplateMatch", "pre_delay": 150, "post_delay": 1000,"template": ["fh.png"], "action": "Click", "next": ["{stepname}{j+1}"] }},')
+            actions.append(f'"{stepname}{j}gb": {{ "recognition": "TemplateMatch", "pre_delay": {speed}, "post_delay": {speed},"template": ["gb.png"], "action": "Click", "next": ["{stepname}{j}done"] }},')
+            actions.append(f'"{stepname}{j}done": {{ "recognition": "TemplateMatch", "pre_delay": {speed}, "post_delay": {speed*3},"template": ["fh.png"], "action": "Click", "next": ["{stepname}{j+1}"] }},')
             i += 1
             j += 1
         elif c == '\\'or c=='/':
