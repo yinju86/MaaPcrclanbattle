@@ -476,9 +476,14 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     try:
                         with open('interface.json', 'r', encoding='utf-8') as f:
                             data = json.load(f)
-                        data['task'] = [task for task in data['task'] if task.get('name') != stepname]
-                        with open('interface.json', 'w', encoding='utf-8') as f:
-                            json.dump(data, f, indent=4, ensure_ascii=False)
+                        # 检查是否有同名 task
+                        if any(task.get('name') == stepname for task in data.get('task', [])):
+                            # 已有同名，跳过写入
+                            pass
+                        else:
+                            data['task'] = [task for task in data['task'] if task.get('name') != stepname]
+                            with open('interface.json', 'w', encoding='utf-8') as f:
+                                json.dump(data, f, indent=4, ensure_ascii=False)
                     except:
                         pass
         except Exception as e:

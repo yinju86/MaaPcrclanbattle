@@ -280,18 +280,17 @@ def generation(stepname,stepfile,namelist,speed=200):
     with open(f'resource/pipeline/{stepname}.json', 'w',encoding='utf-8') as json_file:
         json.dump(data, json_file, indent=4, ensure_ascii=False)
     with open('interface.json', 'r', encoding='utf-8') as json_file:
-        data = json.load(json_file)
+        interface_data = json.load(json_file)
 
-
-    new_task = {
-    "name": f"{stepname}",
-    "entry": f"{stepname}start"
-    }
-    data['task'].append(new_task)
-
-
-    with open('interface.json', 'w', encoding='utf-8') as json_file:
-        json.dump(data, json_file, indent=4, ensure_ascii=False)
+    # 检查是否有同名 task，若有则跳过追加和写入
+    if not any(task.get('name') == stepname for task in interface_data.get('task', [])):
+        new_task = {
+            "name": f"{stepname}",
+            "entry": f"{stepname}start"
+        }
+        interface_data['task'].append(new_task)
+        with open('interface.json', 'w', encoding='utf-8') as json_file:
+            json.dump(interface_data, json_file, indent=4, ensure_ascii=False)
     return output_s
 
 if __name__ == "__main__":
