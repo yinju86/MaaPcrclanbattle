@@ -236,12 +236,12 @@ def generation(stepname,stepfile,namelist,speed=200):
         elif c == 'k':
             actions.append(f'''"{stepname}{j}": 
                            {{ "recognition": "OCR", "threshold": 0.75, 
-                           "action": "Click", "expected": ["卡帧"], "pre_delay": {speed}, "post_delay": {speed}, "rate_limit": 100, "timeout": 5000000,
+                           "action": "Click", "expected": ["卡帧|菜单"], "pre_delay": {speed}, "post_delay": {speed}, "rate_limit": 100, "timeout": 5000000,
                             "next": ["{stepname}{j}_e"] 
                            }},''')
             actions.append(f'''"{stepname}{j}_e": 
                            {{ "recognition": "OCR", "threshold": 0.75, "focus": true, "focus_tip": ["自行目压,目押完毕点击 设定"], 
-                           "action": "Click", "expected": ["卡帧"], "pre_delay": {speed}, "post_delay": {speed}, "rate_limit": 100, "timeout": 5000000,
+                           "action": "Click", "expected": ["卡帧|菜单"], "pre_delay": {speed}, "post_delay": {speed}, "rate_limit": 100, "timeout": 5000000,
                             "next": ["{stepname}{j}gb"] 
                            }},''')
             actions.append(f'"{stepname}{j}gb": {{ "recognition": "TemplateMatch", "pre_delay": {speed}, "post_delay": {speed},"template": ["gb.png"], "action": "Click", "next": ["{stepname}{j}done"] }},')
