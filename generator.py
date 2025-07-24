@@ -328,7 +328,9 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
     def usecontent(self,content,td={}):
         if self.is_text_mode:
             stepname = self.input_box.text()
-            
+            aa,bb=self.output_content()
+            bb=self.char_input.text()
+            self.autosave(f"{stepname}#{aa}#{bb}")
             # 生成脚本
             specialgenerat.generation(stepname, stepfile=content, namelist=td, speed=self.speed)
             msg = QMessageBox()
