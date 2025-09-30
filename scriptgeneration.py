@@ -9,7 +9,7 @@ def generation(stepname,stepfile):
     "{stepname}start": {{
     "recognition": "TemplateMatch",
     "threshold": [
-    0.95
+    0.9
     ],
     "template": [
     "start.png"
@@ -21,7 +21,7 @@ def generation(stepname,stepfile):
     }},"{stepname}start0": {{
     "recognition": "TemplateMatch",
     "threshold": [
-    0.95
+    0.9
     ],
     "template": [
     "start0.png"
@@ -32,7 +32,7 @@ def generation(stepname,stepfile):
     }},"{stepname}start2": {{
     "recognition": "TemplateMatch",
     "threshold": [
-    0.95
+    0.9
     ],
     "template": [
     "start2.png"
@@ -52,7 +52,7 @@ def generation(stepname,stepfile):
     100
     ],
     "threshold": [
-    0.95
+    0.9
     ],
     "action": "Click","pre_delay":800,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}ljfdc","{stepname}ljfd"]}},
@@ -62,7 +62,7 @@ def generation(stepname,stepfile):
     "ljfd.png"
     ],
     "threshold": [
-    0.95
+    0.9
     ],
     "action": "Click","pre_delay":800,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}tc_0"]}},
@@ -72,7 +72,7 @@ def generation(stepname,stepfile):
     "ljfdo.png"
     ],
     "threshold": [
-    0.95
+    0.9
     ],
     "action": "DoNothing","pre_delay":20,"post_delay":15,"rate_limit":30,
     "next": ["{stepname}tc_0"]}},

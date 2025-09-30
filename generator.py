@@ -290,7 +290,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
 
             for row in range(self.table.rowCount()):
                 time_item = self.table.item(row, 0)
-                time = time_item.text().replace("初始状态", "124")
+                time = time_item.text().replace("初始状态", "125")
                 
                 # 将时间值转换为秒数
                 time_value = int(time)
