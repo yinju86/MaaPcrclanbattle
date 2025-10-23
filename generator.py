@@ -704,28 +704,64 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     continue
                     
                 try:
-                    parts = line.split(':')
-                    if len(parts) < 2:
-                        continue
-                        
-                    script_name = parts[0]
-                    
-                    # 检查是否存在同名脚本
-                    if script_name in existing_scripts:
-                        skip_count += 1
-                        continue
+                    # 支持两种分享格式：包含 '#' 的单次UB分享码，以及以 ':' 分隔的 SET 分享码
+                    if '#' in line:
+                        # 单次UB 分享码，格式与 genbyshare() 中处理逻辑一致：stepname#content#namelist
+                        try:
+                            stepname, content, td = line.split('#')
+                        except ValueError:
+                            # 格式不对，跳过
+                            print(f"单次UB分享码格式错误: {line}")
+                            continue
 
-                    # 根据共享码格式调用相应的处理逻辑
-                    if len(parts) == 2:
-                        c, t = sharecode.from_share(parts[1])
-                    elif len(parts) == 3:
-                        c, t = sharecode.from_share(parts[2])
-                    
-                    # 生成脚本
-                    stepname = script_name
-                    scriptgeneration.generation(stepname=stepname, stepfile=self.format_content(c, t))
-                    success_count += 1
-                    existing_scripts.add(script_name)
+                        # 如果已有同名脚本则跳过
+                        if stepname in existing_scripts:
+                            skip_count += 1
+                            continue
+
+                        namelist = td.split(' ')
+                        try:
+                            # 生成单次UB脚本
+                            specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
+                            success_count += 1
+                            existing_scripts.add(stepname)
+                        except Exception as e:
+                            print(f"生成单次UB脚本失败: {line}, 错误: {e}")
+                            continue
+                    else:
+                        parts = line.split(':')
+                        if len(parts) < 2:
+                            continue
+
+                        script_name = parts[0]
+
+                        # 检查是否存在同名脚本
+                        if script_name in existing_scripts:
+                            skip_count += 1
+                            continue
+
+                        # 根据共享码格式调用相应的处理逻辑
+                        try:
+                            if len(parts) == 2:
+                                c, t = sharecode.from_share(parts[1])
+                            elif len(parts) == 3:
+                                c, t = sharecode.from_share(parts[2])
+                            else:
+                                # 不认识的格式，跳过
+                                continue
+                        except Exception as e:
+                            print(f"解析共享码失败: {line}, 错误: {e}")
+                            continue
+
+                        # 生成 SET 脚本
+                        stepname = script_name
+                        try:
+                            scriptgeneration.generation(stepname=stepname, stepfile=self.format_content(c, t))
+                            success_count += 1
+                            existing_scripts.add(script_name)
+                        except Exception as e:
+                            print(f"生成SET脚本失败: {line}, 错误: {e}")
+                            continue
                     
                 except Exception as e:
                     print(f"处理共享码失败: {line}, 错误: {str(e)}")
