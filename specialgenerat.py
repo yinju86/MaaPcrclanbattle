@@ -7,14 +7,6 @@ def generation(stepname,stepfile,namelist,speed=200):
     ubflag=[310,470,630,790,950]
     output_s=f'''{{
     "{stepname}entry": {{
-    "recognition": "TemplateMatch",
-    "threshold": [
-    0.9
-    ],
-    "template": [
-    "start.png"
-    ],
-    "action": "Click",
     "next": [
     "{stepname}start",
     "{stepname}start0"
