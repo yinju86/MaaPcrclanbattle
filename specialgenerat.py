@@ -6,6 +6,19 @@ import os
 def generation(stepname,stepfile,namelist,speed=200):
     ubflag=[310,470,630,790,950]
     output_s=f'''{{
+    "{stepname}entry": {{
+    "recognition": "TemplateMatch",
+    "threshold": [
+    0.9
+    ],
+    "template": [
+    "start.png"
+    ],
+    "action": "Click",
+    "next": [
+    "{stepname}start",
+    "{stepname}start0"
+    ]}},
     "{stepname}start": {{
     "recognition": "TemplateMatch",
     "threshold": [
@@ -286,7 +299,7 @@ def generation(stepname,stepfile,namelist,speed=200):
     if not any(task.get('name') == stepname for task in interface_data.get('task', [])):
         new_task = {
             "name": f"{stepname}",
-            "entry": f"{stepname}start"
+            "entry": f"{stepname}entry",
         }
         interface_data['task'].append(new_task)
         with open('interface.json', 'w', encoding='utf-8') as json_file:
