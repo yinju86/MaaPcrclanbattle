@@ -19,6 +19,8 @@ def generation(stepname,stepfile,namelist,speed=200):
     "template": [
     "start.png"
     ],
+    "focus":true,
+    "focus_tip":"注意关闭属性动画和多目标动画",
     "action": "Click",
     "next": [
     "{stepname}start0"

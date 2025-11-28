@@ -116,7 +116,7 @@ def generation(stepname,stepfile):
     27
     ],
     "focus":true,
-    "focus_tip":"已识别{t}",
+    "focus_tip":"已识别{t},等待{int(tp)}号位ub",
     "expected": [
     "{t}"
     ],"pre_delay":15,"rate_limit":30,"timeout":500000,"next": [
@@ -249,7 +249,7 @@ def generation(stepname,stepfile):
     27
     ],
     "focus":true,
-    "focus_tip":"已识别{t}",
+    "focus_tip":"已识别{t},自动点击卡帧按钮",
     "expected": [
     "{t}"
     ],"pre_delay":15,"rate_limit":30,"timeout":500000,"next": [
@@ -261,7 +261,7 @@ def generation(stepname,stepfile):
     "recognition": "TemplateMatch",
     
     "focus":true,
-    "focus_tip":["自行目压"],
+    "focus_tip":["自行目压,目押结束解除暂停"],
     "action": "Click",
     "template": [
         "kz.png"
