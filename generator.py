@@ -92,6 +92,12 @@ class MainWindow(QWidget):
         medium_action.triggered.connect(lambda: self.set_speed(200))
         slow_action = speed_menu.addAction('慢速识别')
         slow_action.triggered.connect(lambda: self.set_speed(300))
+
+        ub_menu = self.menu_bar.addMenu("UB偏移")
+        offset_action = ub_menu.addAction("偏移量设置")
+        self.offsetX="00000"
+        offset_action.triggered.connect(self.open_ub_offset_dialog)
+
         # 开关SET模式控件
         self.table = QTableWidget()
         self.table.setColumnCount(5)
@@ -263,7 +269,87 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             button_row_index = self.table.indexAt(sender_button.parent().pos()).row()
             if button_row_index > 0:  # 确保第一行不可删除
                 self.table.removeRow(button_row_index)
+    def open_ub_offset_dialog(self):
+        from PyQt5.QtWidgets import (
+            QDialog, QVBoxLayout, QHBoxLayout,
+            QLabel, QSlider, QPushButton
+        )
+        from PyQt5.QtCore import Qt
 
+        dialog = QDialog(self)
+        dialog.setWindowTitle("UB 偏移量设置")
+        dialog.setModal(True)
+
+        main_layout = QVBoxLayout(dialog)
+        offset_str = getattr(self, "offsetX", "00000")
+        values = []
+
+        if len(offset_str) == 5 and offset_str.isdigit():
+            for ch in offset_str:
+                v = int(ch)
+                if v >= 6:
+                    v -= 10
+                values.append(v)
+        else:
+            values = [0] * 5
+        sliders = []
+
+        # 5 个位置
+        for i in range(5):
+            row = QHBoxLayout()
+
+            label = QLabel(f"{i+1}号位")
+            label.setFixedWidth(40)
+
+            slider = QSlider(Qt.Horizontal)
+            slider.setRange(-4, 5)
+            slider.setValue(0)   # 初始为 0
+            slider.setTickPosition(QSlider.TicksBelow)
+            slider.setTickInterval(1)
+
+            value_label = QLabel("0")
+            value_label.setFixedWidth(20)
+            value_label.setText(str(values[i]))
+            slider.valueChanged.connect(
+                lambda v, lab=value_label: lab.setText(str(v))
+            )
+
+            sliders.append(slider)
+
+            row.addWidget(label)
+            row.addWidget(slider)
+            row.addWidget(value_label)
+
+            main_layout.addLayout(row)
+
+        # 按钮区域
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+
+        ok_btn = QPushButton("确定")
+        cancel_btn = QPushButton("取消")
+
+        btn_layout.addWidget(ok_btn)
+        btn_layout.addWidget(cancel_btn)
+
+        main_layout.addLayout(btn_layout)
+
+        # ===== 确定按钮逻辑 =====
+        def on_ok():
+            result = []
+            for s in sliders:
+                v = s.value()
+                if v < 0:
+                    v += 10     # 负数 +10
+                result.append(str(v))
+
+            self.offsetX = "".join(result)
+            dialog.accept()
+
+        ok_btn.clicked.connect(on_ok)
+        cancel_btn.clicked.connect(dialog.reject)
+
+        dialog.exec_()
 
     def output_content(self):
         if self.is_text_mode:
@@ -358,6 +444,8 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             msg1.setIcon(QMessageBox.Information)
             msg1.exec_()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
+        if int(self.offsetX):
+            stepname=f"{self.offsetX}{stepname}"
         code=sharecode.to_share(content,td)
         self.autosave(f"{stepname}:{char}:{code}")
         scriptgeneration.generation(stepname=stepname,stepfile=output_text)

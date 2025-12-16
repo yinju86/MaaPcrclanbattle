@@ -3,8 +3,16 @@ import os
 
 
 def generation(stepname,stepfile):
+    offsetX = [0, 0, 0, 0, 0]
+    if len(stepname) >= 5 and stepname[:5].isdigit():
+        for i in range(5):
+            digit = int(stepname[i])
+            result = digit * 10
+            if result > 60:
+                result -= 100
+            offsetX[i] = result
     sss=restore_status(stepfile)
-    ubflag=[310,470,630,790,950]
+    ubflag=[310+offsetX[0],470+offsetX[1],630+offsetX[2],790+offsetX[3],950+offsetX[4]]
     output_s=f'''{{
     "{stepname}entry": {{
     "next": [
