@@ -303,16 +303,16 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
 
             slider = QSlider(Qt.Horizontal)
             slider.setRange(-4, 5)
+            slider.setValue(values[i])
+            slider.setTickPosition(QSlider.TicksBelow)
+            slider.setTickInterval(1)
+
+            value_label = QLabel(str(values[i]))
+            value_label.setFixedWidth(20)
+
             slider.valueChanged.connect(
                 lambda v, lab=value_label: lab.setText(str(v))
             )
-
-            slider.setValue(values[i])
-
-            value_label = QLabel("0")
-            value_label.setFixedWidth(20)
-            value_label.setText(str(values[i]))
-
 
             sliders.append(slider)
 
