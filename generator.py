@@ -557,6 +557,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     elif len(a) == 3:
                         c, t = sharecode.from_share(a[2])
                         self.char_input.setText(a[1])
+                        stepname= a[0]
                         if len(stepname) >= 5 and stepname[:5].isdigit():
                             self.offsetX = stepname[:5]
                             stepname = stepname[5:]
@@ -713,8 +714,6 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 if script_list.item(row, 0).text() == script_name:
                     script_list.removeRow(row)
                     break
-                
-            QMessageBox.information(self, '成功', f'已删除脚本：{script_name}')
         except Exception as e:
             QMessageBox.warning(self, '错误', f'删除脚本失败：{str(e)}')
 
