@@ -11,6 +11,7 @@ def generation(stepname,stepfile):
             if result > 60:
                 result -= 100
             offsetX[i] = result
+        stepname = stepname[5:]
     sss=restore_status(stepfile)
     ubflag=[310+offsetX[0],470+offsetX[1],630+offsetX[2],790+offsetX[3],950+offsetX[4]]
     output_s=f'''{{

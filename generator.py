@@ -303,16 +303,16 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
 
             slider = QSlider(Qt.Horizontal)
             slider.setRange(-4, 5)
-            slider.setValue(0)   # 初始为 0
-            slider.setTickPosition(QSlider.TicksBelow)
-            slider.setTickInterval(1)
+            slider.valueChanged.connect(
+                lambda v, lab=value_label: lab.setText(str(v))
+            )
+
+            slider.setValue(values[i])
 
             value_label = QLabel("0")
             value_label.setFixedWidth(20)
             value_label.setText(str(values[i]))
-            slider.valueChanged.connect(
-                lambda v, lab=value_label: lab.setText(str(v))
-            )
+
 
             sliders.append(slider)
 
@@ -486,7 +486,6 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         if self.is_text_mode:
             # 单次UB分享逻辑，留空待补充
             text = self.text_edit.toPlainText()
-            # TODO: 生成分享码
             name1 = self.input_box.text() if self.input_box.text().strip() else f"{random.randint(100,999)}"
             aa,bb=self.output_content()
             bb=self.char_input.text()
@@ -509,6 +508,8 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             text_edit.setReadOnly(True)
             input_text = self.input_box.text()
             stepname = input_text if input_text.strip() else f"{random.randint(100,999)}"
+            if int(self.offsetX):
+                stepname=f"{self.offsetX}{stepname}"
             char = self.char_input.text()
             if char:
                 text_edit.setText(f"{stepname}:{char}:{code}")
@@ -548,11 +549,18 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     a = a.split(":")
                     if len(a) == 2:
                         c, t = sharecode.from_share(a[1])
-                        self.input_box.setText(a[0])
+                        stepname= a[0]
+                        if len(stepname) >= 5 and stepname[:5].isdigit():
+                            self.offsetX = stepname[:5]
+                            stepname = stepname[5:]
+                        self.input_box.setText(stepname)
                     elif len(a) == 3:
                         c, t = sharecode.from_share(a[2])
                         self.char_input.setText(a[1])
-                        self.input_box.setText(a[0])
+                        if len(stepname) >= 5 and stepname[:5].isdigit():
+                            self.offsetX = stepname[:5]
+                            stepname = stepname[5:]
+                        self.input_box.setText(stepname)
                     self.set_input(c, t)
                 else:
                     c, t = sharecode.from_share(a)
