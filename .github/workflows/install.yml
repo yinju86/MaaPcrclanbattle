@@ -90,9 +90,9 @@ jobs:
         with:
           repository: MaaXYZ/MaaFramework
           fileName: "MAA-win-${{ matrix.arch }}*"
-          latest: true
-          #version: "tag"
-          #tag: "v2.4.2"  # 在这里指定 MaaFramework 的版本号
+          latest: false
+          version: "tag"
+          tag: "v2.4.2"  # 在这里指定 MaaFramework 的版本号
           out-file-path: "deps"
           extract: true
 
