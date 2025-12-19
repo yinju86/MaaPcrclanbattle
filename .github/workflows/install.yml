@@ -92,7 +92,7 @@ jobs:
           fileName: "MAA-win-${{ matrix.arch }}*"
           latest: false
           version: "tag"
-          tag: "v2.4.2"  # 在这里指定 MaaFramework 的版本号
+          tag: "v5.1.0"  # 在这里指定 MaaFramework 的版本号
           out-file-path: "deps"
           extract: true
 
