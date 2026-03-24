@@ -30,7 +30,7 @@ class MainWindow(QWidget):
         self.is_setting_input = False
         self.is_text_mode = False  # 模式标志：False为表格，True为文本
         self.initUI()
-
+        self.get_shared_scripts()  # 启动时获取共享轴数据
     def initUI(self):
         self.setWindowTitle('轴输入窗口')
         self.setGeometry(100, 100, 1000, 600)
