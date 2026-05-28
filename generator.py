@@ -416,6 +416,8 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             stepname = self.input_box.text()
             aa,bb=self.output_content()
             bb=self.char_input.text()
+            if int(self.offsetX):
+                stepname=f"{self.offsetX}{stepname}"
             self.autosave(f"{stepname}#{aa}#{bb}")
             # 生成脚本
             specialgenerat.generation(stepname, stepfile=content, namelist=td, speed=self.speed)
@@ -489,6 +491,8 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             name1 = self.input_box.text() if self.input_box.text().strip() else f"{random.randint(100,999)}"
             aa,bb=self.output_content()
             bb=self.char_input.text()
+            if int(self.offsetX):
+                name1=f"{self.offsetX}{name1}"
             dialog = QDialog(self)
             dialog.setWindowTitle('分享码')
             layout = QVBoxLayout()
@@ -532,12 +536,14 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     self.switch_mode()
                 # 解析单次UB分享码
                 stepname, content, td = a.split('#')
+                if len(stepname) >= 5 and stepname[:5].isdigit():
+                    self.offsetX = stepname[:5]
+                    stepname = stepname[5:]
                 self.text_edit.setPlainText(content)
                 self.input_box.setText(stepname)
                 self.char_input.setText(td)
                 namelist = td.split(' ')
                 specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
-                # TODO: 解析内容并生成脚本
                 QMessageBox.information(self, "提示", f"已生成")
                 return
             else:
@@ -809,8 +815,13 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                             print(f"单次UB分享码格式错误: {line}")
                             continue
 
+                        # 处理offsetX标识后再进行对比
+                        compare_name = stepname
+                        if len(stepname) >= 5 and stepname[:5].isdigit():
+                            compare_name = stepname[5:]
+                        
                         # 如果已有同名脚本则跳过
-                        if stepname in existing_scripts:
+                        if compare_name in existing_scripts:
                             skip_count += 1
                             continue
 
@@ -819,7 +830,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                             # 生成单次UB脚本
                             specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
                             success_count += 1
-                            existing_scripts.add(stepname)
+                            existing_scripts.add(compare_name)
                         except Exception as e:
                             print(f"生成单次UB脚本失败: {line}, 错误: {e}")
                             continue
@@ -830,8 +841,13 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
 
                         script_name = parts[0]
 
+                        # 处理offsetX标识后再进行对比
+                        compare_name = script_name
+                        if len(script_name) >= 5 and script_name[:5].isdigit():
+                            compare_name = script_name[5:]
+
                         # 检查是否存在同名脚本
-                        if script_name in existing_scripts:
+                        if compare_name in existing_scripts:
                             skip_count += 1
                             continue
 
@@ -853,7 +869,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                         try:
                             scriptgeneration.generation(stepname=stepname, stepfile=self.format_content(c, t))
                             success_count += 1
-                            existing_scripts.add(script_name)
+                            existing_scripts.add(compare_name)
                         except Exception as e:
                             print(f"生成SET脚本失败: {line}, 错误: {e}")
                             continue
@@ -862,12 +878,13 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     print(f"处理共享码失败: {line}, 错误: {str(e)}")
                     continue
 
-            # 显示处理结果
-            msg = QMessageBox()
-            msg.setWindowTitle('处理结果')
-            msg.setText(f'成功生成 {success_count} 个脚本\n跳过 {skip_count} 个已存在的脚本')
-            msg.setIcon(QMessageBox.Information)
-            msg.exec_()
+            # 仅当成功生成脚本数大于0时才弹窗
+            if success_count > 0:
+                msg = QMessageBox()
+                msg.setWindowTitle('处理结果')
+                msg.setText(f'成功生成 {success_count} 个脚本\n跳过 {skip_count} 个已存在的脚本')
+                msg.setIcon(QMessageBox.Information)
+                msg.exec_()
             
         except Exception as e:
             msg = QMessageBox()
