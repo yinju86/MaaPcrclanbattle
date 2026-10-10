@@ -446,3 +446,11 @@ install
 
 # Tools
 tools/ImageCropper/**/*.png
+
+# 运行时产物：脚本生成时会往工作目录写 resource/pipeline/*.json 并改写 interface.json。
+# 前导斜杠表示只锚定仓库根目录，避免误伤受版本管理的 assets/resource/。
+/resource/
+/interface.json
+
+# WorkBuddy 工作记忆，不属于源码
+.workbuddy/

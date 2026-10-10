@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QMessageBox,QHBoxLayout,QDialog,QTextEdit, QMenuBar, QMenu
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtGui import QIntValidator
 import random
 import sharecode
@@ -192,16 +192,38 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             self.is_text_mode = False
         self._sync_char_input_mode()
 
+    def sender_row(self, sender_button):
+        """由按钮反查它所在的行号，无法确定时返回 -1。
+
+        原先是 indexAt(sender.parent().pos()).row()，有两个隐患：
+        1. indexAt 要求 x/y 同时命中某个单元格，列宽被拖动或出现水平滚动时
+           会返回 -1，且它有时钳位到第 0 行而不是失败，属于静默算错；
+        2. sender.parent() 假定按钮之上只有一层容器，操作中途多包一层 QWidget
+           就拿不到 viewport 坐标（实测第 4 行会被算成第 0 行）。
+
+        改成先把按钮原点映射到 viewport 再取纵坐标：映射会逐级穿过所有父容器，
+        不关心嵌套了几层；rowAt 只看 y，不再受列宽与水平滚动影响。
+        """
+        if sender_button is None:
+            return -1
+        viewport = self.table.viewport()
+        if not viewport.isAncestorOf(sender_button):
+            return -1
+        return self.table.rowAt(sender_button.mapTo(viewport, QPoint(0, 0)).y())
+
     def add_row(self, button_row_index=None):
     # 如果没有指定行，从按钮信号中获取行
-        
+
         sender_button = self.sender()  # 获取信号的发出者
         if self.is_setting_input:
             button_row_index = self.table.rowCount() - 1
         elif sender_button:
-            button_row_index = self.table.indexAt(sender_button.parent().pos()).row()
+            button_row_index = self.sender_row(sender_button)
         else:
-            button_row_index = self.table.rowCount() - 1  # 默认最后一行
+            button_row_index = -1  # 没有来源时统一走下面的兜底
+        if button_row_index < 0:
+            # 行号算不出来就追加到末尾，而不是退化成 insertRow(0)
+            button_row_index = self.table.rowCount() - 1
         self.table.insertRow(button_row_index + 1)
 
         # 时间列
@@ -264,11 +286,11 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         self.table.setColumnWidth(2, 300)
 
     def delete_row(self):
-        sender_button = self.sender()  # 获取信号的发出者
-        if sender_button:
-            button_row_index = self.table.indexAt(sender_button.parent().pos()).row()
-            if button_row_index > 0:  # 确保第一行不可删除
-                self.table.removeRow(button_row_index)
+        # sender_row 取不到行时返回 -1，下面的判断会让它安静地什么都不做，
+        # 不会误删第 0 行。
+        button_row_index = self.sender_row(self.sender())
+        if button_row_index > 0:  # 确保第一行不可删除
+            self.table.removeRow(button_row_index)
     def open_ub_offset_dialog(self):
         from PyQt5.QtWidgets import (
             QDialog, QVBoxLayout, QHBoxLayout,
