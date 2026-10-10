@@ -3,13 +3,12 @@ from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout,
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIntValidator
 import random
-import scriptgeneration
 import sharecode
 import json
 from pathlib import Path
 import webbrowser
 import requests  # 添加到文件顶部的imports中
-import specialgenerat
+import pipeline
 import re
 def get_version():
     try:
@@ -422,7 +421,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             # 分享码第三段存空格分隔的原始角色名串，供 # 格式解析
             self.autosave(f"{stepname}#{stepfile}#{' '.join(namelist)}")
             # 生成脚本要用列表，传字符串会让 namelist[n-1] 退化成单个字符
-            specialgenerat.generation(stepname, stepfile=stepfile, namelist=namelist, speed=self.speed)
+            pipeline.generate_single_ub_pipeline(stepname, stepfile=stepfile, namelist=namelist, speed=self.speed)
             msg = QMessageBox()
             msg.setText('已生成单次UB脚本')
             msg.setIcon(QMessageBox.Information)
@@ -443,7 +442,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             stepname=f"{self.offsetX}{stepname}"
         code=sharecode.to_share(content,td)
         self.autosave(f"{stepname}:{code}")
-        scriptgeneration.generation(stepname=stepname,stepfile=output_text)
+        pipeline.generate_set_pipeline(stepname=stepname, stepfile=output_text)
         msg = QMessageBox()
         msg.setText(f'已生成脚本 "{stepname}"')
         msg.setIcon(QMessageBox.Information)
@@ -533,7 +532,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 namelist = parse_namelist(td)
                 if len(namelist) != 5:
                     raise ValueError(f"角色名数量应为5个，实际为{len(namelist)}个")
-                specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
+                pipeline.generate_single_ub_pipeline(stepname, stepfile=content, namelist=namelist)
                 QMessageBox.information(self, "提示", f"已生成")
                 return
             else:
@@ -800,7 +799,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                             continue
                         try:
                             # 生成单次UB脚本
-                            specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
+                            pipeline.generate_single_ub_pipeline(stepname, stepfile=content, namelist=namelist)
                             success_count += 1
                             existing_scripts.add(compare_name)
                         except Exception as e:
@@ -833,7 +832,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                         # 生成 SET 脚本
                         stepname = script_name
                         try:
-                            scriptgeneration.generation(stepname=stepname, stepfile=self.format_content(c, t))
+                            pipeline.generate_set_pipeline(stepname=stepname, stepfile=self.format_content(c, t))
                             success_count += 1
                             existing_scripts.add(compare_name)
                         except Exception as e:
