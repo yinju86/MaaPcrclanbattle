@@ -8,9 +8,6 @@ import sharecode
 import json
 from pathlib import Path
 import webbrowser
-import ota
-import nameget
-from PyQt5.QtCore import QThread, pyqtSignal
 import requests  # 添加到文件顶部的imports中
 import specialgenerat
 import re
@@ -24,13 +21,22 @@ def get_version():
         return "unknown"
 
 
+def parse_namelist(text):
+    """按空白切分角色名，返回列表。
+
+    无参 split() 会把连续多个空格视作单个分隔符并丢弃空片段，
+    避免 "雪  狐" 这类输入切出空串导致角色名与位置错位。
+    """
+    return text.split()
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.is_setting_input = False
         self.is_text_mode = False  # 模式标志：False为表格，True为文本
         self.initUI()
-        self.get_shared_scripts()  # 启动时获取共享轴数据
+
     def initUI(self):
         self.setWindowTitle('轴输入窗口')
         self.setGeometry(100, 100, 1000, 600)
@@ -50,12 +56,6 @@ class MainWindow(QWidget):
         
         manage_action = script_menu.addAction('管理脚本')
         manage_action.triggered.connect(self.show_script_manager)
-        
-        # 添加更新菜单
-        #update_menu = QMenu('更新(不使用自动选人无需更新)', self)
-        #self.menu_bar.addMenu(update_menu)
-        
-        
         
         help_menu = QMenu('帮助', self)
         self.menu_bar.addMenu(help_menu)
@@ -78,8 +78,6 @@ class MainWindow(QWidget):
         
         get_share_action = share_menu.addAction('获取在线轴')
         get_share_action.triggered.connect(self.get_shared_scripts)
-        update_action = share_menu.addAction('更新角色列表')
-        update_action.triggered.connect(self.update_character_list)
         self.layout = QVBoxLayout()
         self.layout.setMenuBar(self.menu_bar)  # 将菜单栏添加到布局中
         speed_menu = QMenu('识别速度', self)
@@ -120,11 +118,11 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         self.text_edit.hide()
         self.layout.addWidget(self.text_edit)
 
-        # 创建角色输入布局
+        # 创建角色输入布局（仅单次UB模式使用，SET模式下整体隐藏）
         self.char_layout = QHBoxLayout()
         self.char_label = QLabel("使用角色：")
         self.char_input = QLineEdit()
-        self.char_input.setPlaceholderText("无需自动选人可不填写,默认借第一位,可使用昵称")
+        self.char_input.setPlaceholderText("必须按顺序填写角色名,与轴中名字必须一一对应,且用空格隔开")
         self.char_layout.addWidget(self.char_label)
         self.char_layout.addWidget(self.char_input)
         
@@ -175,21 +173,26 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         self.share_layout.addWidget(self.no_script_checkbox)
         self.layout.addLayout(self.share_layout)
         self.setLayout(self.layout)
+        self._sync_char_input_mode()  # 初始为SET模式，隐藏使用角色输入
+
+    def _sync_char_input_mode(self):
+        """使用角色输入框仅有单次UB模式需要，SET模式下整体隐藏。"""
+        self.char_label.setVisible(self.is_text_mode)
+        self.char_input.setVisible(self.is_text_mode)
 
     def switch_mode(self):
         if not self.is_text_mode:
             self.table.hide()
             self.text_edit.show()
             self.char_input.clear()
-            self.char_input.setPlaceholderText("必须按顺序填写角色名,与轴中名字必须一一对应,且用空格隔开")
             self.is_text_mode = True
         else:
             self.text_edit.hide()
             self.table.show()
             self.char_input.clear()
-            self.char_input.setPlaceholderText("无需自动选人可不填写,默认借第一位,可使用昵称")
             self.is_text_mode = False
-            
+        self._sync_char_input_mode()
+
     def add_row(self, button_row_index=None):
     # 如果没有指定行，从按钮信号中获取行
         
@@ -198,10 +201,8 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             button_row_index = self.table.rowCount() - 1
         elif sender_button:
             button_row_index = self.table.indexAt(sender_button.parent().pos()).row()
-            print(button_row_index,"s")
         else:
             button_row_index = self.table.rowCount() - 1  # 默认最后一行
-            print(button_row_index)
         self.table.insertRow(button_row_index + 1)
 
         # 时间列
@@ -354,11 +355,11 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
     def output_content(self):
         if self.is_text_mode:
             text = self.text_edit.toPlainText()
-            namelist=self.char_input.text()
+            namelist = self.char_input.text()
             if not namelist.strip():
                 QMessageBox.warning(self, "警告", "请填写角色名或昵称")
                 return
-            namelist = namelist.split(' ')
+            namelist = parse_namelist(namelist)
             if len(namelist) !=5:
                 QMessageBox.warning(self, "警告", "角色名数量不正确，请确保填写5个角色名")
                 return
@@ -414,13 +415,14 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
     def usecontent(self,content,td={}):
         if self.is_text_mode:
             stepname = self.input_box.text()
-            aa,bb=self.output_content()
-            bb=self.char_input.text()
+            # output_content() 返回 (处理后的指令串, 5个角色名列表)
+            stepfile, namelist = self.output_content()
             if int(self.offsetX):
                 stepname=f"{self.offsetX}{stepname}"
-            self.autosave(f"{stepname}#{aa}#{bb}")
-            # 生成脚本
-            specialgenerat.generation(stepname, stepfile=content, namelist=td, speed=self.speed)
+            # 分享码第三段存空格分隔的原始角色名串，供 # 格式解析
+            self.autosave(f"{stepname}#{stepfile}#{' '.join(namelist)}")
+            # 生成脚本要用列表，传字符串会让 namelist[n-1] 退化成单个字符
+            specialgenerat.generation(stepname, stepfile=stepfile, namelist=namelist, speed=self.speed)
             msg = QMessageBox()
             msg.setText('已生成单次UB脚本')
             msg.setIcon(QMessageBox.Information)
@@ -436,20 +438,11 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 status_diff =  [x != y for x, y in zip(s, prev_status)]
                 output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff,td.get(i,0.015)))
         input_text = self.input_box.text()
-        char=self.char_input.text()
-        if char and input_text:
-            boss=int(input_text[1])
-            normalizename=nameget.rewrite(input_text,char,boss)
-            #弹窗展示该参数
-            msg1 = QMessageBox()
-            msg1.setText(f'确认角色:'+normalizename)
-            msg1.setIcon(QMessageBox.Information)
-            msg1.exec_()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
         if int(self.offsetX):
             stepname=f"{self.offsetX}{stepname}"
         code=sharecode.to_share(content,td)
-        self.autosave(f"{stepname}:{char}:{code}")
+        self.autosave(f"{stepname}:{code}")
         scriptgeneration.generation(stepname=stepname,stepfile=output_text)
         msg = QMessageBox()
         msg.setText(f'已生成脚本 "{stepname}"')
@@ -489,8 +482,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             # 单次UB分享逻辑，留空待补充
             text = self.text_edit.toPlainText()
             name1 = self.input_box.text() if self.input_box.text().strip() else f"{random.randint(100,999)}"
-            aa,bb=self.output_content()
-            bb=self.char_input.text()
+            content, namelist = self.output_content()
             if int(self.offsetX):
                 name1=f"{self.offsetX}{name1}"
             dialog = QDialog(self)
@@ -498,7 +490,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             layout = QVBoxLayout()
             text_edit = QTextEdit(dialog)
             text_edit.setReadOnly(True)
-            text_edit.setText(f"{name1}#{aa}#{bb}")
+            text_edit.setText(f"{name1}#{content}#{' '.join(namelist)}")
             layout.addWidget(text_edit)
             dialog.setLayout(layout)
             dialog.exec_()
@@ -514,11 +506,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             stepname = input_text if input_text.strip() else f"{random.randint(100,999)}"
             if int(self.offsetX):
                 stepname=f"{self.offsetX}{stepname}"
-            char = self.char_input.text()
-            if char:
-                text_edit.setText(f"{stepname}:{char}:{code}")
-            else:
-                text_edit.setText(f"{stepname}:{code}")
+            text_edit.setText(f"{stepname}:{code}")
             layout.addWidget(text_edit)
             url_label = QLabel('共享网址：<a href="https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz">https://docs.qq.com/sheet/DU2NHdnlNalFqdVZz</a>')
             url_label.setOpenExternalLinks(True)
@@ -542,7 +530,9 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 self.text_edit.setPlainText(content)
                 self.input_box.setText(stepname)
                 self.char_input.setText(td)
-                namelist = td.split(' ')
+                namelist = parse_namelist(td)
+                if len(namelist) != 5:
+                    raise ValueError(f"角色名数量应为5个，实际为{len(namelist)}个")
                 specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
                 QMessageBox.information(self, "提示", f"已生成")
                 return
@@ -552,22 +542,14 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     self.switch_mode()
                 # ...existing code...
                 if ":" in a:
-                    a = a.split(":")
-                    if len(a) == 2:
-                        c, t = sharecode.from_share(a[1])
-                        stepname= a[0]
-                        if len(stepname) >= 5 and stepname[:5].isdigit():
-                            self.offsetX = stepname[:5]
-                            stepname = stepname[5:]
-                        self.input_box.setText(stepname)
-                    elif len(a) == 3:
-                        c, t = sharecode.from_share(a[2])
-                        self.char_input.setText(a[1])
-                        stepname= a[0]
-                        if len(stepname) >= 5 and stepname[:5].isdigit():
-                            self.offsetX = stepname[:5]
-                            stepname = stepname[5:]
-                        self.input_box.setText(stepname)
+                    parts = a.split(":")
+                    # 分享码永远在最后一段，兼容历史格式 "轴名:角色:码" / "轴名::码"
+                    c, t = sharecode.from_share(parts[-1])
+                    stepname = parts[0]
+                    if len(stepname) >= 5 and stepname[:5].isdigit():
+                        self.offsetX = stepname[:5]
+                        stepname = stepname[5:]
+                    self.input_box.setText(stepname)
                     self.set_input(c, t)
                 else:
                     c, t = sharecode.from_share(a)
@@ -723,19 +705,6 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         except Exception as e:
             QMessageBox.warning(self, '错误', f'删除脚本失败：{str(e)}')
 
-    def update_character_list(self):
-        # 开始提示
-        QMessageBox.information(self, '提示', '开始下载请勿关闭窗口,可能需要数分钟和科学上网')
-        
-        # 创建并启动下载线程
-        self.ota_thread = OtaThread()
-        self.ota_thread.finished.connect(self._on_download_complete)
-        self.ota_thread.start()
-
-    def _on_download_complete(self):
-        # 完成提示
-        QMessageBox.information(self, '提示', '角色更新完成')
-
     def clear_all_content(self):
         # 弹出确认对话框
         reply = QMessageBox.question(self, '确认', 
@@ -825,7 +794,10 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                             skip_count += 1
                             continue
 
-                        namelist = td.split(' ')
+                        namelist = parse_namelist(td)
+                        if len(namelist) != 5:
+                            print(f"单次UB分享码角色名数量错误（应为5个）: {line}")
+                            continue
                         try:
                             # 生成单次UB脚本
                             specialgenerat.generation(stepname, stepfile=content, namelist=namelist)
@@ -851,15 +823,9 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                             skip_count += 1
                             continue
 
-                        # 根据共享码格式调用相应的处理逻辑
+                        # 根据共享码生成 SET 脚本（码永远在最后一段，兼容历史格式）
                         try:
-                            if len(parts) == 2:
-                                c, t = sharecode.from_share(parts[1])
-                            elif len(parts) == 3:
-                                c, t = sharecode.from_share(parts[2])
-                            else:
-                                # 不认识的格式，跳过
-                                continue
+                            c, t = sharecode.from_share(parts[-1])
                         except Exception as e:
                             print(f"解析共享码失败: {line}, 错误: {e}")
                             continue
@@ -904,18 +870,6 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 status_diff = [x != y for x, y in zip(s, prev_status)]
                 output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff, td.get(i, 0.015)))
         return output_text
-class OtaThread(QThread):
-    finished = pyqtSignal()
-    
-    def run(self):
-        try:
-            ota.devMain()
-            self.finished.emit()
-        except Exception as e:
-            # 异常处理可以根据需要添加
-            pass
-
-    
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_win = MainWindow()
