@@ -10,15 +10,10 @@ from pathlib import Path
 import webbrowser
 import requests  # 添加到文件顶部的imports中
 import pipeline
+from pipeline import build_set_steps
 import re
-def get_version():
-    try:
-        install_path = Path(__file__).parent / "install"
-        with open(install_path / "interface.json", "r", encoding="utf-8") as f:
-            interface = json.load(f)
-        return interface.get("version", "unknown")
-    except:
-        return "unknown"
+import cli  # 程序目录 / 版本号 / 命令行接口，GUI 与 CLI 共用同一份
+from cli import app_dir, get_version
 
 
 def parse_namelist(text):
@@ -32,7 +27,7 @@ def parse_namelist(text):
 
 # ================================================================ AI 模式
 # 接口配置存在程序目录下的 ai_config.json（含明文 API Key，已加进 .gitignore）
-AI_CONFIG_PATH = Path(__file__).parent / "ai_config.json"
+AI_CONFIG_PATH = app_dir() / "ai_config.json"
 
 # 默认走 DeepSeek：OpenAI 兼容格式，base_url 不需要带 /v1，
 # 代码会自动补 /chat/completions。deepseek-flash 原生支持图片输入，
@@ -43,6 +38,25 @@ DEFAULT_AI_CONFIG = {
     "api_key": "",
     "auto_generate": True,
 }
+
+
+def load_ai_config():
+    """读本地配置；缺项或空串一律退回默认值（默认 DeepSeek）。
+
+    放在模块级是为了让命令行接口（cli.py）不依赖界面也能取到配置。
+    """
+    config = dict(DEFAULT_AI_CONFIG)
+    try:
+        stored = json.loads(AI_CONFIG_PATH.read_text(encoding="utf-8"))
+        if isinstance(stored, dict):
+            for key, value in stored.items():
+                # 空串当作「没配过」，否则把输入框清空一次就再也回不到默认值
+                if isinstance(value, str) and not value.strip():
+                    continue
+                config[key] = value
+    except Exception:
+        pass
+    return config
 
 # 轴图上这些字眼在指令串里都是同一个意思：k（卡帧目押）
 # 整串里出现就算（这些词不可能是角色名的一部分）
@@ -325,6 +339,59 @@ def is_deepseek_endpoint(base_url, model):
     return "deepseek" in f"{base_url} {model}".lower()
 
 
+def request_ai_detection(base_url, model, api_key, image_bytes, mime):
+    """调 OpenAI 兼容的对话接口识别轴图，返回解析好的识别结果 dict。
+
+    抽成模块级函数是为了让界面线程和命令行接口走同一套请求逻辑
+    （含 DeepSeek 关思考模式等修复），避免两边各自演化。
+    """
+    url = base_url.rstrip("/")
+    if not url.endswith("/chat/completions"):
+        url += "/chat/completions"
+    b64 = base64.b64encode(image_bytes).decode("ascii")
+    payload = {
+        "model": model,
+        "temperature": 0,
+        "max_tokens": 8000,
+        "messages": [
+            {"role": "system", "content": AI_PROMPT},
+            {"role": "user", "content": [
+                {"type": "text", "text": "识别这张轴图，按要求输出 JSON。"},
+                {"type": "image_url",
+                 "image_url": {"url": f"data:{mime};base64,{b64}"}},
+            ]},
+        ],
+    }
+    if is_deepseek_endpoint(base_url, model):
+        # 关掉思考模式，否则推理 token 会把 max_tokens 吃光、正文为空
+        payload["thinking"] = {"type": "disabled"}
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    response = requests.post(url, json=payload, headers=headers, timeout=180)
+    if response.status_code != 200:
+        raise RuntimeError(f"HTTP {response.status_code}：{response.text[:400]}")
+    data = response.json()
+    choice = (data.get("choices") or [{}])[0]
+    message = choice.get("message") or {}
+    content = message.get("content")
+    if isinstance(content, list):
+        content = "".join(
+            part.get("text", "") for part in content if isinstance(part, dict))
+    content = (content or "").strip()
+    if not content:
+        # 只拿到思考过程、没有正文，是最容易踩的一脚，报清楚原因
+        usage = data.get("usage") or {}
+        details = usage.get("completion_tokens_details") or {}
+        raise RuntimeError(
+            "模型只返回了思考过程、没有正文"
+            f"（finish_reason={choice.get('finish_reason')}，"
+            f"reasoning_tokens={details.get('reasoning_tokens')}，"
+            f"max_tokens={payload['max_tokens']}）。"
+            "把 max_tokens 调大或换用能关闭思考的模型再试。")
+    return parse_ai_json(content)
+
+
 class AIDetectThread(QThread):
     """后台调用 OpenAI 兼容的对话接口识别轴图，避免阻塞界面。"""
 
@@ -341,51 +408,9 @@ class AIDetectThread(QThread):
 
     def run(self):
         try:
-            url = self.base_url.rstrip("/")
-            if not url.endswith("/chat/completions"):
-                url += "/chat/completions"
-            b64 = base64.b64encode(self.image_bytes).decode("ascii")
-            payload = {
-                "model": self.model,
-                "temperature": 0,
-                "max_tokens": 8000,
-                "messages": [
-                    {"role": "system", "content": AI_PROMPT},
-                    {"role": "user", "content": [
-                        {"type": "text", "text": "识别这张轴图，按要求输出 JSON。"},
-                        {"type": "image_url",
-                         "image_url": {"url": f"data:{self.mime};base64,{b64}"}},
-                    ]},
-                ],
-            }
-            if is_deepseek_endpoint(self.base_url, self.model):
-                # 关掉思考模式，否则推理 token 会把 max_tokens 吃光、正文为空
-                payload["thinking"] = {"type": "disabled"}
-            headers = {"Content-Type": "application/json"}
-            if self.api_key:
-                headers["Authorization"] = f"Bearer {self.api_key}"
-            response = requests.post(url, json=payload, headers=headers, timeout=180)
-            if response.status_code != 200:
-                raise RuntimeError(f"HTTP {response.status_code}：{response.text[:400]}")
-            data = response.json()
-            choice = (data.get("choices") or [{}])[0]
-            message = choice.get("message") or {}
-            content = message.get("content")
-            if isinstance(content, list):
-                content = "".join(
-                    part.get("text", "") for part in content if isinstance(part, dict))
-            content = (content or "").strip()
-            if not content:
-                # 只拿到思考过程、没有正文，是最容易踩的一脚，报清楚原因
-                usage = data.get("usage") or {}
-                details = usage.get("completion_tokens_details") or {}
-                raise RuntimeError(
-                    "模型只返回了思考过程、没有正文"
-                    f"（finish_reason={choice.get('finish_reason')}，"
-                    f"reasoning_tokens={details.get('reasoning_tokens')}，"
-                    f"max_tokens={payload['max_tokens']}）。"
-                    "把 max_tokens 调大或换用能关闭思考的模型再试。")
-            self.succeeded.emit(parse_ai_json(content))
+            self.succeeded.emit(request_ai_detection(
+                self.base_url, self.model, self.api_key,
+                self.image_bytes, self.mime))
         except Exception as exc:
             self.failed.emit(f"{type(exc).__name__}: {exc}")
 
@@ -653,19 +678,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         self.ai_party.textChanged.connect(self._schedule_ai_reapply)
 
     def _load_ai_config(self):
-        """读本地配置；缺项或空串一律退回默认值（默认 DeepSeek）。"""
-        config = dict(DEFAULT_AI_CONFIG)
-        try:
-            stored = json.loads(AI_CONFIG_PATH.read_text(encoding="utf-8"))
-            if isinstance(stored, dict):
-                for key, value in stored.items():
-                    # 空串当作「没配过」，否则把输入框清空一次就再也回不到默认值
-                    if isinstance(value, str) and not value.strip():
-                        continue
-                    config[key] = value
-        except Exception:
-            pass
-        return config
+        return load_ai_config()
 
     def _schedule_ai_config_save(self, *args):
         self._ai_save_timer.start()
@@ -904,12 +917,16 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             return core
         raise ValueError(f"操作「{op}」不在队伍号位里：{party}")
 
-    def _build_set_rows(self, rows_json, party):
-        """SET：识别结果 -> set_input() 需要的 (rows, td)。"""
+    @staticmethod
+    def _build_set_rows(rows_json, party):
+        """SET：识别结果 -> set_input() 需要的 (rows, td)。
+
+        纯函数（不碰控件），所以标成静态方法，命令行接口可以直接复用。
+        """
         slot = {name: index + 1 for index, name in enumerate(party)}
         rows, td = [], {}
         for index, row in enumerate(rows_json):
-            time = self._normalize_set_time(row.get("time"), initial=(index == 0))
+            time = MainWindow._normalize_set_time(row.get("time"), initial=(index == 0))
             time_point = row.get("time_point")
             if time_point is None:
                 trigger = str(row.get("trigger") or "").strip()
@@ -927,7 +944,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     raise ValueError(
                         f"第 {index + 1} 行的触发角色「{trigger}」不在队伍号位里：{party}")
             time_point = str(int(time_point))
-            bits = self._parse_state(row.get("state"))
+            bits = MainWindow._parse_state(row.get("state"))
             if len(bits) == 5:
                 bits.append(bool(row.get("auto")))
             rows.append((time, time_point, bits))
@@ -936,13 +953,14 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 td[index] = float(delay)
         return rows, td
 
-    def _build_ub_lines(self, rows_json, party):
-        """单次UB：识别结果 -> 文本区要显示的若干行。"""
+    @staticmethod
+    def _build_ub_lines(rows_json, party):
+        """单次UB：识别结果 -> 文本区要显示的若干行（纯函数，命令行也复用）。"""
         lines, unknown = [], []
         for row in rows_json:
             pieces = []
             if row.get("time") not in (None, ""):
-                pieces.append("s" + self._normalize_ub_time(row.get("time")))
+                pieces.append("s" + MainWindow._normalize_ub_time(row.get("time")))
             ops = row.get("ops")
             if ops is None:
                 ops = row.get("op") or []
@@ -954,7 +972,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 # 否则 克*2(38-37) 会被切成两条废串。
                 for piece in split_ub_ops(op):
                     try:
-                        converted = self._normalize_ub_op(piece, party)
+                        converted = MainWindow._normalize_ub_op(piece, party)
                     except ValueError:
                         # 攒起来一起报，省得用户改一个又冒出下一个
                         unknown.append(piece)
@@ -1300,14 +1318,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             msg.exec_()
             return
         
-        output_text = []
-        for i, (t, tp, s) in enumerate(content):
-            if i == 0 :
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s,td.get(i,0.015)))
-            else:
-                prev_status = content[i-1][2]
-                status_diff =  [x != y for x, y in zip(s, prev_status)]
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff,td.get(i,0.015)))
+        output_text = build_set_steps(content, td)
         input_text = self.input_box.text()
         stepname=input_text if input_text.strip() else f"{random.randint(100,999)}"
         if int(self.offsetX):
@@ -1608,7 +1619,8 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             self.ai_last_result = None
             self._set_ai_status("")
 
-    def process_text(self,text, namelist):
+    @staticmethod
+    def process_text(text, namelist):
         # 1. 替换角色名为数字
         for idx, name in enumerate(namelist, 1):
             text = text.replace(name, str(idx))
@@ -1738,16 +1750,14 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         self.speed = value
         QMessageBox.information(self, "识别速度", f"已设置为{'快速' if value==100 else '中速' if value==200 else '慢速'}识别（{value}）\n计算机性能差的推荐使用快速识别")
     def format_content(self, content, td):
-        output_text = []
-        for i, (t, tp, s) in enumerate(content):
-            if i == 0:
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, s, td.get(i, 0.015)))
-            else:
-                prev_status = content[i-1][2]
-                status_diff = [x != y for x, y in zip(s, prev_status)]
-                output_text.append((f"{int(t[:-2])}:{t[-2:]}", tp, status_diff, td.get(i, 0.015)))
-        return output_text
+        return build_set_steps(content, td)
 if __name__ == '__main__':
+    # 带命令行参数时走无界面接口（cli.py），方便脚本/其它程序调用 exe；
+    # 不带参数才是打开图形界面。判断放在创建 QApplication 之前，
+    # 这样命令行调用完全不碰 Qt。
+    if cli.is_cli_invocation(sys.argv[1:]):
+        sys.exit(cli.main(sys.argv[1:]))
+
     app = QApplication(sys.argv)
     main_win = MainWindow()
     main_win.show()

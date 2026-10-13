@@ -13,6 +13,7 @@
 
 import json
 import os
+from pathlib import Path
 
 
 def _split_offset(stepname):
@@ -151,9 +152,13 @@ def _finish_node(expected):
 
 
 def _save_and_register(stepname, nodes):
-    """写 resource/pipeline/{stepname}.json，并向 interface.json 注册同名 task。"""
+    """写 resource/pipeline/{stepname}.json，并向 interface.json 注册同名 task。
+
+    返回写出的文件路径（命令行接口用它回报结果）。
+    """
     os.makedirs('resource/pipeline', exist_ok=True)
-    with open(f'resource/pipeline/{stepname}.json', 'w', encoding='utf-8') as json_file:
+    script_path = Path(f'resource/pipeline/{stepname}.json')
+    with open(script_path, 'w', encoding='utf-8') as json_file:
         json.dump(nodes, json_file, indent=4, ensure_ascii=False)
 
     with open('interface.json', 'r', encoding='utf-8') as json_file:
@@ -167,7 +172,7 @@ def _save_and_register(stepname, nodes):
         with open('interface.json', 'w', encoding='utf-8') as json_file:
             json.dump(interface_data, json_file, indent=4, ensure_ascii=False)
 
-    return nodes
+    return script_path
 
 
 def restore_status(stepfile):
@@ -189,6 +194,28 @@ def restore_status(stepfile):
 
     # 将布尔值列表转换为O/X字符串，在第5位后添加' auto'
     return [''.join('O' if x else 'X' for x in status[:5]) + ' auto' + ('开' if status[5] else '关') for status in result]
+
+
+def build_set_steps(content, td=None):
+    """把「(时间, 时点, 6位状态)」行转成 `generate_set_pipeline` 需要的行。
+
+    第一行写全量状态，之后每行写与上一行的**状态差** —— 生成脚本时只点差异位，
+    这正是「开关 SET」省操作的地方。
+
+    content: [(三位时间字符串, 时点字符串, [6 个 bool]), ...]
+    td:      {行号: 延时秒}，缺省 0.015
+
+    返回 [(时刻 "M:SS", 时点, 状态差列表, 延时秒), ...]
+    """
+    td = td or {}
+    steps = []
+    for i, (t, time_point, status) in enumerate(content):
+        if i == 0:
+            diff = list(status)
+        else:
+            diff = [x != y for x, y in zip(status, content[i - 1][2])]
+        steps.append((f"{int(t[:-2])}:{t[-2:]}", time_point, diff, td.get(i, 0.015)))
+    return steps
 
 
 def generate_set_pipeline(stepname, stepfile):
@@ -314,6 +341,50 @@ def generate_set_pipeline(stepname, stepfile):
     return _save_and_register(stepname, nodes)
 
 
+def parse_ub_steps(stepfile):
+    """把单次UB的指令串切成步骤列表。
+
+    返回 `[(kind, value)]`，kind 取值：
+
+    ============  ==============================  ==================
+    kind          含义                            value
+    ============  ==============================  ==================
+    ``click``     点击该号位角色的 UB              号位 1~5
+    ``auto``      开 auto 等该角色自动 UB 后关     号位 1~5
+    ``delay``     延时                            秒数
+    ``wait``      等倒计时读到 M:SS                ``"M:SS"``
+    ``frame``     卡帧目押                        ``None``
+    ============  ==============================  ==================
+
+    反斜杠与斜杠会被忽略；其余字符抛 KeyError（与旧实现一致）。
+    抽出来是为了让 `generate_single_ub_pipeline` 与命令行反解共用同一套语法。
+    """
+    steps = []
+    i = 0
+    while i < len(stepfile):
+        c = stepfile[i]
+        if c.isdigit():
+            steps.append(("click", int(c)))
+            i += 1
+        elif c in ('a', 'A') and i + 1 < len(stepfile) and stepfile[i + 1].isdigit():
+            steps.append(("auto", int(stepfile[i + 1])))
+            i += 2
+        elif c in ('d', 'D') and i + 1 < len(stepfile) and stepfile[i + 1].isdigit():
+            steps.append(("delay", int(stepfile[i + 1])))
+            i += 2
+        elif c in ('s', 'S') and i + 3 < len(stepfile) and all(x.isdigit() for x in stepfile[i + 1:i + 4]):
+            steps.append(("wait", f"{stepfile[i + 1]}:{stepfile[i + 2:i + 4]}"))
+            i += 4
+        elif c == 'k':
+            steps.append(("frame", None))
+            i += 1
+        elif c in ('\\', '/'):
+            i = i + 1
+        else:
+            raise KeyError(f"Invalid character '{c}' in stepfile at position {i}")
+    return steps
+
+
 def generate_single_ub_pipeline(stepname, stepfile, namelist, speed=200):
     """单次UB模式。
 
@@ -326,12 +397,10 @@ def generate_single_ub_pipeline(stepname, stepfile, namelist, speed=200):
     nodes = _entry_nodes(stepname, first_node=f"{stepname}0",
                          start_tip="注意关闭属性动画和多目标动画")
 
-    i = 0
-    j = 0
-    while i < len(stepfile):
-        c = stepfile[i]
-        if c.isdigit():
-            n = int(c)
+    j = -1
+    for j, (kind, value) in enumerate(parse_ub_steps(stepfile)):
+        if kind == "click":
+            n = value
             name = namelist[n - 1]
             nodes[f"{stepname}{j}"] = {
                 "recognition": "DirectHit",
@@ -373,10 +442,8 @@ def generate_single_ub_pipeline(stepname, stepfile, namelist, speed=200):
                 "timeout": 500000,
                 "next": [f"{stepname}{j + 1}"],
             }
-            i += 1
-            j += 1
-        elif c in ('a', 'A') and i + 1 < len(stepfile) and stepfile[i + 1].isdigit():
-            n = int(stepfile[i + 1])
+        elif kind == "auto":
+            n = value
             name = namelist[n - 1]
             nodes[f"{stepname}{j}"] = {
                 "recognition": "DirectHit",
@@ -416,10 +483,8 @@ def generate_single_ub_pipeline(stepname, stepfile, namelist, speed=200):
                 "timeout": 500000,
                 "next": [f"{stepname}{j + 1}"],
             }
-            i += 2
-            j += 1
-        elif c in ('d', 'D') and i + 1 < len(stepfile) and stepfile[i + 1].isdigit():
-            t = int(stepfile[i + 1])
+        elif kind == "delay":
+            t = value
             nodes[f"{stepname}{j}"] = {
                 "recognition": "DirectHit",
                 "pre_delay": 15,
@@ -429,10 +494,8 @@ def generate_single_ub_pipeline(stepname, stepfile, namelist, speed=200):
                 "action": "DoNothing",
                 "next": [f"{stepname}{j + 1}"],
             }
-            i += 2
-            j += 1
-        elif c in ('s', 'S') and i + 3 < len(stepfile) and all(x.isdigit() for x in stepfile[i + 1:i + 4]):
-            tp = f"{stepfile[i + 1]}:{stepfile[i + 2:i + 4]}"
+        elif kind == "wait":
+            tp = value
             nodes[f"{stepname}{j}"] = {
                 "recognition": "OCR",
                 "post_delay": 15,
@@ -446,9 +509,7 @@ def generate_single_ub_pipeline(stepname, stepfile, namelist, speed=200):
                 "action": "DoNothing",
                 "next": [f"{stepname}{j + 1}"],
             }
-            i += 4
-            j += 1
-        elif c == 'k':
+        else:  # frame：卡帧目押
             nodes[f"{stepname}{j}"] = {
                 "recognition": "OCR",
                 "threshold": 0.75,
@@ -489,12 +550,5 @@ def generate_single_ub_pipeline(stepname, stepfile, namelist, speed=200):
                 "action": "Click",
                 "next": [f"{stepname}{j + 1}"],
             }
-            i += 1
-            j += 1
-        elif c in ('\\', '/'):
-            i = i + 1
-        else:
-            raise KeyError(f"Invalid character '{c}' in stepfile at position {i}")
-
-    nodes[f"{stepname}{j}"] = _finish_node("0:01")
+    nodes[f"{stepname}{j + 1}"] = _finish_node("0:01")
     return _save_and_register(stepname, nodes)

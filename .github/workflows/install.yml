@@ -9,6 +9,8 @@ on:
     paths:
       - ".github/workflows/install.yml"
       - "assets/**"
+      - ".workbuddy/skills/**"
+      - "README.md"
       - "**.py"
   pull_request:
     branches:
@@ -16,6 +18,8 @@ on:
     paths:
       - ".github/workflows/install.yml"
       - "assets/**"
+      - ".workbuddy/skills/**"
+      - "README.md"
       - "**.py"
   workflow_dispatch:
 
@@ -116,12 +120,29 @@ jobs:
           jq --arg version_name "MaaPcrclanbattle" --arg url ""https://github.com/yinju86/MaaPcrclanbattle"" --arg version ${{ needs.meta.outputs.tag }} '. + {"name": $version_name, "url": $url,"version": $version}' ./assets/interface.json > ./install/interface.json
           pip install pyinstaller
           pip install -r assets/requirements.txt
+
+      # 打包前先把命令行接口跑一遍：它是打包后给脚本/别的程序调用的入口，
+      # 顺手也验证了 generator.py 能正常 import（含 cli / pipeline）。
+      - name: Smoke test CLI
+        shell: bash
+        run: |
+          python ./generator.py version
+          python ./generator.py decode "wgpsXuql8ezlbxgaMK!"
+          python ./generator.py --help
+
+      - name: Build generator.exe
+        shell: bash
+        run: |
           pyinstaller --onefile -w --icon=assets/resource/kyouka.ico generator.py
           cp ./dist/generator.exe ./install
+
       - uses: actions/upload-artifact@v4
         with:
           name: MaaPcrclanbattle-win-${{ matrix.arch }}
           path: "install"
+          # .workbuddy/skills（自带的 WorkBuddy skill）是隐藏目录，
+          # v4 的 upload-artifact 默认会把它丢掉，必须显式打开
+          include-hidden-files: true
 
 
   release:

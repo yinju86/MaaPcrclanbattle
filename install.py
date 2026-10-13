@@ -59,6 +59,28 @@ def install_resource():
         json.dump(interface, f, ensure_ascii=False, indent=4)
 
 
+def install_skill():
+    """把项目自带的 WorkBuddy skill 一并打进安装目录。
+
+    skill 在 `.workbuddy/skills/` 下（同目录的 `.workbuddy/memory/` 只是工作日志，
+    不进仓库也不该打包）。解压后整份 Release 就是一个可以直接打开来用的
+    WorkBuddy 工作区，里面已经带着「轴图 → 分享码」的 skill。
+    """
+    source = working_dir / ".workbuddy" / "skills"
+    if not source.is_dir():
+        print("Skip skills: .workbuddy/skills not found.")
+        return
+
+    target = install_path / ".workbuddy" / "skills"
+    shutil.copytree(
+        source,
+        target,
+        ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+        dirs_exist_ok=True,
+    )
+    print(f"Install skills to {target} successfully.")
+
+
 def install_chores():
     shutil.copy2(
         working_dir / "README.md",
@@ -73,6 +95,7 @@ def install_chores():
 if __name__ == "__main__":
     install_deps()
     install_resource()
+    install_skill()
     install_chores()
 
     print(f"Install to {install_path} successfully.")
