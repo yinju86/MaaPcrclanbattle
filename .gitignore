@@ -443,6 +443,24 @@ enc_temp_folder/*
 deps
 build
 install
+dist
+*.spec
 
 # Tools
 tools/ImageCropper/**/*.png
+
+# 运行时产物：脚本生成时会往工作目录写 resource/pipeline/*.json 并改写 interface.json。
+# 前导斜杠表示只锚定仓库根目录，避免误伤受版本管理的 assets/resource/。
+/resource/
+/interface.json
+
+# 界面里每生成一次脚本就会追加一条分享码到这里
+/自动保存的分享码.txt
+
+# WorkBuddy 的项目记忆不进仓库（工作日志，不属于源码）；
+# 但随项目分发的 skill 要入库，所以先忽略 .workbuddy 下所有条目、再把 skills 放行。
+.workbuddy/*
+!.workbuddy/skills/
+
+# AI 识别模式的接口配置（含明文 API Key，绝不入库）
+/ai_config.json
