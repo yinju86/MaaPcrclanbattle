@@ -1,8 +1,9 @@
 import sys
-from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QMessageBox,QHBoxLayout,QDialog,QTextEdit, QMenuBar, QMenu
-from PyQt5.QtCore import Qt, QPoint
-from PyQt5.QtGui import QIntValidator
+from PyQt5.QtWidgets import QLineEdit,QApplication, QWidget,QLabel, QVBoxLayout, QTableWidget, QTableWidgetItem, QComboBox, QPushButton, QCheckBox, QMessageBox,QHBoxLayout,QDialog,QTextEdit, QMenuBar, QMenu, QActionGroup, QFileDialog
+from PyQt5.QtCore import Qt, QPoint, QThread, pyqtSignal, QBuffer, QIODevice, QTimer
+from PyQt5.QtGui import QIntValidator, QImage, QPixmap, QKeySequence
 import random
+import base64
 import sharecode
 import json
 from pathlib import Path
@@ -29,11 +30,308 @@ def parse_namelist(text):
     return text.split()
 
 
+# ================================================================ AI 模式
+# 接口配置存在程序目录下的 ai_config.json（含明文 API Key，已加进 .gitignore）
+AI_CONFIG_PATH = Path(__file__).parent / "ai_config.json"
+
+DEFAULT_AI_CONFIG = {
+    "base_url": "https://api.openai.com/v1",
+    "model": "gpt-4o",
+    "api_key": "",
+    "auto_generate": True,
+}
+
+# 轴图上这些字眼在指令串里都是同一个意思：k（卡帧目押）
+# 整串里出现就算（这些词不可能是角色名的一部分）
+UB_FRAME_WORDS = ("卡帧", "目押", "押跳秒", "唱名", "速压破甲")
+# 只出现在括号备注里才算：轴图上写「黑骑（速压破甲）」时，那格要的是卡帧目押，
+# 不是点黑骑的 UB。放宽到「押 / 破甲 / 速压」是因为备注写法很随意。
+UB_FRAME_WORDS_IN_NOTE = ("押", "破甲", "速压", "唱名", "卡帧", "目押")
+
+# 拆操作串用的分隔符：模型有时会把一格里的多条操作写成「A - B」
+UB_OP_SEPARATORS = r"[\s\-–—、,，/]+"
+
+# 可接受的图片扩展名（剪贴板与拖拽都按它过滤）
+IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
+
+AI_PROMPT = """你是《公主连结 Re:Dive》会战轴图的识别助手。用户给你一张轴图，你把它转成结构化 JSON。
+
+【输出要求】
+只输出一个 JSON 对象。不要输出任何解释文字，不要用 markdown 代码块包起来。
+
+【第一步：判断轴的类型】
+- 图上有「状态 / 开关」列（形如 xOOXX 的 5 位串，外加一个单独的 auto 开关列）→ type 填 "set"
+- 操作列是「角色名 / XX AUTO / BOSS UB / 卡帧」这类流水账，没有开关列 → type 填 "ub"
+
+【type = set 的输出格式】
+{"type":"set","name":"轴名","party":["1号位","2号位","3号位","4号位","5号位"],
+ "rows":[{"time":"124","trigger":null,"state":"xOOXX","auto":true,"delay":null}]}
+- time：三位数字。图上写 1:11 就填 "111"，写 56 就填 "056"；「开局 / 初始状态」固定填 "124"
+- trigger：该行标注的触发角色名。写的是「普攻后 / 无 UB / BOSS」时填 null
+- state：5 位字符串，O 表示开、X 表示关，从左到右依次是 1→5 号位，必须恰好 5 位
+- auto：图上单独标注的「开 / 关」，布尔值
+- delay：只有图上明示了秒数才填数字，否则填 null
+
+【type = ub 的输出格式】
+{"type":"ub","name":"轴名","party":["1号位","2号位","3号位","4号位","5号位"],
+ "rows":[{"time":"1:21","ops":["克AUTO"]},{"ops":["瓜智AUTO","克"]}]}
+- party 按图上 1→5 号位的顺序
+- time：只写在「需要重新校准倒计时」的段落起点（例如押跳秒处、BOSS UB 之后那一段的开头），
+  其余行省略 time 字段
+- ops：逐条照抄图上的操作，规则如下
+    普通角色名                                → "角色名"
+    「XX AUTO」                               → "角色名AUTO"
+    「卡帧 / 目押 / 押跳秒 / 唱名 / 速压破甲」  → "k"
+    「克*2」这种连点写法                       → 拆成两条 "克","克"
+    括号里的说明文字和伤害数字                 → 全部丢掉
+    BOSS UB 这一行本身不产生操作               → ops 填 []
+- 一行里写了多个不同时刻的操作（如「1:21 克(AUTO) - 瓜智(115 AUTO)」）时，拆成多行
+
+【通用】
+- 字段不确定时宁可不填，绝对不要编造
+- 时间、角色名、开关状态必须与图上完全一致
+- 图上没有单独列队伍名单时，从角色头像行或标题里按号位顺序推断 party"""
+
+
+def image_from_clipboard():
+    """从剪贴板取图，返回 (QImage, 文件路径或 None)；取不到返回 (None, None)。
+
+    先试图片本身（截图工具、Win+Shift+S 都会以图片形式落进剪贴板），
+    再试剪贴板里是不是「复制的图片文件」。
+    """
+    clipboard = QApplication.clipboard()
+    if clipboard is None:
+        return None, None
+    mime = clipboard.mimeData()
+    if mime is not None:
+        try:
+            if mime.hasImage():
+                image = clipboard.image()
+                if image is not None and not image.isNull():
+                    return image, None
+        except Exception:
+            pass
+        try:
+            if mime.hasUrls():
+                for url in mime.urls():
+                    path = url.toLocalFile()
+                    if path and Path(path).suffix.lower() in IMAGE_SUFFIXES:
+                        image = QImage(path)
+                        if not image.isNull():
+                            return image, path
+        except Exception:
+            pass
+    return None, None
+
+
+def encode_image(image, max_side=2000):
+    """QImage -> (PNG bytes, mime)。超过 max_side 先等比缩小，避免请求体过大。"""
+    if image.width() > max_side or image.height() > max_side:
+        image = image.scaled(max_side, max_side, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+    buffer = QBuffer()
+    buffer.open(QIODevice.WriteOnly)
+    image.save(buffer, "PNG")
+    return bytes(buffer.data()), "image/png"
+
+
+def parse_ai_json(text):
+    """从模型回复里抠出第一个完整的 JSON 对象。
+
+    模型经常套一层 ```json 代码块，或者在 JSON 前后加一两句解释，
+    所以不能直接 json.loads。
+    """
+    body = str(text or "").strip()
+    body = re.sub(r"^```[a-zA-Z0-9_]*\s*", "", body)
+    body = re.sub(r"\s*```\s*$", "", body)
+    start = body.find("{")
+    if start < 0:
+        raise ValueError("模型没有返回 JSON 内容")
+    depth = 0
+    in_string = False
+    escape = False
+    for i in range(start, len(body)):
+        ch = body[i]
+        if in_string:
+            if escape:
+                escape = False
+            elif ch == "\\":
+                escape = True
+            elif ch == '"':
+                in_string = False
+            continue
+        if ch == '"':
+            in_string = True
+        elif ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                return json.loads(body[start:i + 1])
+    raise ValueError("模型返回的 JSON 不完整")
+
+
+class ImageDropLabel(QLabel):
+    """图片区域：支持拖拽放入、Ctrl+V 粘贴、点击选择文件。"""
+
+    imageDropped = pyqtSignal(QImage)
+
+    PLACEHOLDER = ("把轴图拖到这里，或直接按 Ctrl+V 粘贴截图\n（也可以点下面的「选择图片」）")
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptDrops(True)
+        self.setFocusPolicy(Qt.StrongFocus)
+        self.setAlignment(Qt.AlignCenter)
+        self.setMinimumHeight(220)
+        self.setWordWrap(True)
+        self._source = None
+        self._path = None
+        self._show_placeholder()
+
+    # ---------------- 对外接口 ----------------
+    def sourceImage(self):
+        return self._source
+
+    def sourcePath(self):
+        return self._path
+
+    def setImage(self, image, path=None):
+        """载入一张 QImage；返回是否成功。"""
+        if image is None or image.isNull():
+            return False
+        self._source = image
+        self._path = path
+        self._refresh()
+        self.imageDropped.emit(image)
+        return True
+
+    def clearImage(self):
+        self._source = None
+        self._path = None
+        self.setPixmap(QPixmap())
+        self._show_placeholder()
+
+    # ---------------- 内部 ----------------
+    def _show_placeholder(self):
+        self.setPixmap(QPixmap())
+        self.setText(self.PLACEHOLDER)
+        self.setStyleSheet(
+            "QLabel{border:2px dashed #a0a6ad;border-radius:6px;color:#8a9098;"
+            "background:#fafbfc;padding:8px;}")
+
+    def _refresh(self):
+        if self._source is None:
+            self._show_placeholder()
+            return
+        self.setText("")
+        self.setStyleSheet("QLabel{border:2px solid #4a90d9;border-radius:6px;background:#ffffff;}")
+        box_w = max(80, self.width() - 12)
+        box_h = max(80, self.height() - 12)
+        pixmap = QPixmap.fromImage(self._source).scaled(
+            box_w, box_h, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.setPixmap(pixmap)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self._refresh()
+
+    def keyPressEvent(self, event):
+        if event.matches(QKeySequence.Paste):
+            self.pasteFromClipboard()
+            return
+        super().keyPressEvent(event)
+
+    def pasteFromClipboard(self):
+        image, path = image_from_clipboard()
+        if image is None:
+            QMessageBox.warning(self, "提示",
+                                "剪贴板里没有图片。\n请先用截图工具（Win+Shift+S / 微信截图）截取轴图，再按 Ctrl+V。")
+            return False
+        return self.setImage(image, path)
+
+    def dragEnterEvent(self, event):
+        mime = event.mimeData()
+        if mime.hasImage() or mime.hasUrls():
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        mime = event.mimeData()
+        if mime.hasUrls():
+            for url in mime.urls():
+                path = url.toLocalFile()
+                if path and Path(path).suffix.lower() in IMAGE_SUFFIXES:
+                    image = QImage(path)
+                    if not image.isNull():
+                        self.setImage(image, path)
+                        event.acceptProposedAction()
+                        return
+        if mime.hasImage():
+            image = QImage(mime.imageData())
+            if not image.isNull():
+                self.setImage(image)
+                event.acceptProposedAction()
+
+
+class AIDetectThread(QThread):
+    """后台调用 OpenAI 兼容的对话接口识别轴图，避免阻塞界面。"""
+
+    succeeded = pyqtSignal(dict)
+    failed = pyqtSignal(str)
+
+    def __init__(self, base_url, model, api_key, image_bytes, mime, parent=None):
+        super().__init__(parent)
+        self.base_url = base_url
+        self.model = model
+        self.api_key = api_key
+        self.image_bytes = image_bytes
+        self.mime = mime
+
+    def run(self):
+        try:
+            url = self.base_url.rstrip("/")
+            if not url.endswith("/chat/completions"):
+                url += "/chat/completions"
+            b64 = base64.b64encode(self.image_bytes).decode("ascii")
+            payload = {
+                "model": self.model,
+                "temperature": 0,
+                "max_tokens": 4000,
+                "messages": [
+                    {"role": "system", "content": AI_PROMPT},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": "识别这张轴图，按要求输出 JSON。"},
+                        {"type": "image_url",
+                         "image_url": {"url": f"data:{self.mime};base64,{b64}"}},
+                    ]},
+                ],
+            }
+            headers = {"Content-Type": "application/json"}
+            if self.api_key:
+                headers["Authorization"] = f"Bearer {self.api_key}"
+            response = requests.post(url, json=payload, headers=headers, timeout=180)
+            if response.status_code != 200:
+                raise RuntimeError(f"HTTP {response.status_code}：{response.text[:400]}")
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+            if isinstance(content, list):
+                content = "".join(
+                    part.get("text", "") for part in content if isinstance(part, dict))
+            self.succeeded.emit(parse_ai_json(content))
+        except Exception as exc:
+            self.failed.emit(f"{type(exc).__name__}: {exc}")
+
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.is_setting_input = False
         self.is_text_mode = False  # 模式标志：False为表格，True为文本
+        self.mode = "set"          # "set" / "ub" / "ai" 三种模式
+        self.mode_actions = {}
+        self.ai_last_result = None    # 最近一次识别结果（改队伍顺序时重新套用）
+        self.ai_thread = None
+        self._ai_party_syncing = False
         self.initUI()
 
     def initUI(self):
@@ -43,11 +341,21 @@ class MainWindow(QWidget):
         # 添加菜单栏
         self.menu_bar = QMenuBar(self)
 
-        # 添加模式切换菜单
+        # 添加模式切换菜单（三种模式互斥勾选）
         mode_menu = QMenu('模式切换', self)
         self.menu_bar.addMenu(mode_menu)
-        self.switch_mode_action = mode_menu.addAction('切换为单次UB/开关SET模式')
-        self.switch_mode_action.triggered.connect(self.switch_mode)
+        self.mode_group = QActionGroup(self)
+        self.mode_group.setExclusive(True)
+        for label, mode_name in (('开关SET模式', 'set'),
+                                 ('单次UB模式', 'ub'),
+                                 ('AI识别模式', 'ai')):
+            action = mode_menu.addAction(label)
+            action.setCheckable(True)
+            action.setChecked(mode_name == 'set')
+            action.triggered.connect(
+                lambda checked=False, m=mode_name: self._set_mode(m))
+            self.mode_group.addAction(action)
+            self.mode_actions[mode_name] = action
 
         # 添加脚本管理菜单
         script_menu = QMenu('脚本管理', self)
@@ -171,26 +479,470 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         self.share_layout.addWidget(self.sharein_button)
         self.share_layout.addWidget(self.no_script_checkbox)
         self.layout.addLayout(self.share_layout)
+
+        # AI 识别面板（放在表格/文本区之后、角色输入之前）
+        self._build_ai_panel()
+        self.layout.insertWidget(2, self.ai_panel)
+
         self.setLayout(self.layout)
-        self._sync_char_input_mode()  # 初始为SET模式，隐藏使用角色输入
+        self._set_mode('set')  # 初始为SET模式，并同步各模式控件的可见性
 
-    def _sync_char_input_mode(self):
-        """使用角色输入框仅有单次UB模式需要，SET模式下整体隐藏。"""
-        self.char_label.setVisible(self.is_text_mode)
-        self.char_input.setVisible(self.is_text_mode)
+    # ============================================================ AI 识别模式
+    def _build_ai_panel(self):
+        self.ai_panel = QWidget()
+        outer = QVBoxLayout(self.ai_panel)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(4)
 
-    def switch_mode(self):
-        if not self.is_text_mode:
-            self.table.hide()
-            self.text_edit.show()
+        # 接口地址
+        row1 = QHBoxLayout()
+        row1.addWidget(QLabel("接口地址："))
+        self.ai_base_url = QLineEdit()
+        self.ai_base_url.setPlaceholderText(
+            "OpenAI 兼容接口，如 https://api.openai.com/v1")
+        row1.addWidget(self.ai_base_url)
+        outer.addLayout(row1)
+
+        # 模型 + API Key
+        row2 = QHBoxLayout()
+        row2.addWidget(QLabel("模型："))
+        self.ai_model = QLineEdit()
+        self.ai_model.setPlaceholderText("需要支持图片输入，如 gpt-4o / qwen-vl-max")
+        row2.addWidget(self.ai_model)
+        row2.addWidget(QLabel("API Key："))
+        self.ai_api_key = QLineEdit()
+        self.ai_api_key.setEchoMode(QLineEdit.Password)
+        self.ai_api_key.setPlaceholderText("留空则不带鉴权头")
+        row2.addWidget(self.ai_api_key)
+        self.ai_key_toggle = QPushButton("显示")
+        self.ai_key_toggle.setCheckable(True)
+        self.ai_key_toggle.setFixedWidth(48)
+        self.ai_key_toggle.toggled.connect(
+            lambda on: self.ai_api_key.setEchoMode(
+                QLineEdit.Normal if on else QLineEdit.Password))
+        row2.addWidget(self.ai_key_toggle)
+        outer.addLayout(row2)
+
+        # 队伍号位
+        row3 = QHBoxLayout()
+        row3.addWidget(QLabel("队伍号位顺序："))
+        self.ai_party = QLineEdit()
+        self.ai_party.setPlaceholderText(
+            "识别后自动填入，按 1→5 号位、空格分隔。SET 模式的「时点」靠它推算，"
+            "改了这里会自动重算")
+        row3.addWidget(self.ai_party)
+        outer.addLayout(row3)
+
+        # 图片区
+        self.ai_image = ImageDropLabel()
+        self.ai_image.imageDropped.connect(self._on_ai_image_changed)
+        outer.addWidget(self.ai_image)
+
+        # 按钮行
+        row4 = QHBoxLayout()
+        self.ai_paste_btn = QPushButton("粘贴图片(Ctrl+V)")
+        self.ai_paste_btn.clicked.connect(self._paste_image)
+        self.ai_pick_btn = QPushButton("选择图片…")
+        self.ai_pick_btn.clicked.connect(self._pick_image)
+        self.ai_clear_btn = QPushButton("清空图片")
+        self.ai_clear_btn.clicked.connect(self._clear_image)
+        self.ai_detect_btn = QPushButton("识别并填充")
+        self.ai_detect_btn.clicked.connect(self._start_ai_detect)
+        self.ai_auto_generate = QCheckBox("识别后自动生成脚本")
+        row4.addWidget(self.ai_paste_btn)
+        row4.addWidget(self.ai_pick_btn)
+        row4.addWidget(self.ai_clear_btn)
+        row4.addWidget(self.ai_detect_btn)
+        row4.addWidget(self.ai_auto_generate)
+        outer.addLayout(row4)
+
+        self.ai_status = QLabel("")
+        self.ai_status.setWordWrap(True)
+        outer.addWidget(self.ai_status)
+
+        # ---- 配置读写：改完 600ms 落盘一次，避免每敲一个字都写文件 ----
+        self._ai_save_timer = QTimer(self)
+        self._ai_save_timer.setSingleShot(True)
+        self._ai_save_timer.setInterval(600)
+        self._ai_save_timer.timeout.connect(self._save_ai_config)
+
+        self._ai_apply_timer = QTimer(self)
+        self._ai_apply_timer.setSingleShot(True)
+        self._ai_apply_timer.setInterval(400)
+        self._ai_apply_timer.timeout.connect(self._reapply_ai_result)
+
+        config = self._load_ai_config()
+        self.ai_base_url.setText(config.get("base_url", ""))
+        self.ai_model.setText(config.get("model", ""))
+        self.ai_api_key.setText(config.get("api_key", ""))
+        self.ai_auto_generate.setChecked(bool(config.get("auto_generate", True)))
+
+        for widget in (self.ai_base_url, self.ai_model, self.ai_api_key):
+            widget.textChanged.connect(self._schedule_ai_config_save)
+        self.ai_auto_generate.toggled.connect(self._schedule_ai_config_save)
+        self.ai_party.textChanged.connect(self._schedule_ai_reapply)
+
+    def _load_ai_config(self):
+        config = dict(DEFAULT_AI_CONFIG)
+        try:
+            stored = json.loads(AI_CONFIG_PATH.read_text(encoding="utf-8"))
+            if isinstance(stored, dict):
+                config.update(stored)
+        except Exception:
+            pass
+        return config
+
+    def _schedule_ai_config_save(self, *args):
+        self._ai_save_timer.start()
+
+    def _save_ai_config(self):
+        config = {
+            "base_url": self.ai_base_url.text().strip(),
+            "model": self.ai_model.text().strip(),
+            "api_key": self.ai_api_key.text().strip(),
+            "auto_generate": self.ai_auto_generate.isChecked(),
+        }
+        try:
+            AI_CONFIG_PATH.write_text(
+                json.dumps(config, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as exc:
+            print("保存 AI 配置失败:", exc)
+
+    def _set_ai_status(self, text, error=False):
+        self.ai_status.setText(text)
+        self.ai_status.setStyleSheet(
+            "color:#c0392b;" if error else "color:#2c7a3f;")
+
+    def _on_ai_image_changed(self, image):
+        self._set_ai_status(
+            f"已载入图片 {image.width()}×{image.height()}，点「识别并填充」开始。")
+
+    def _paste_image(self):
+        image, path = image_from_clipboard()
+        if image is None:
+            self._set_ai_status("剪贴板里没有图片。", error=True)
+            QMessageBox.warning(
+                self, "提示",
+                "剪贴板里没有图片。\n请先用截图工具（Win+Shift+S / 微信截图）截取轴图，再按 Ctrl+V。")
+            return
+        self.ai_image.setImage(image, path)
+
+    def _pick_image(self):
+        path, _ = QFileDialog.getOpenFileName(
+            self, "选择轴图", "",
+            "图片 (*.png *.jpg *.jpeg *.webp *.bmp *.gif)")
+        if not path:
+            return
+        image = QImage(path)
+        if image.isNull():
+            QMessageBox.warning(self, "提示", "这个文件读不出图片内容。")
+            return
+        self.ai_image.setImage(image, path)
+
+    def _clear_image(self):
+        self.ai_image.clearImage()
+        self.ai_last_result = None
+        self._set_ai_status("")
+
+    def _start_ai_detect(self):
+        if self.ai_thread is not None and self.ai_thread.isRunning():
+            return
+        base_url = self.ai_base_url.text().strip()
+        model = self.ai_model.text().strip()
+        if not base_url or not model:
+            QMessageBox.warning(self, "提示", "请先填写接口地址和模型名称。")
+            return
+        image = self.ai_image.sourceImage()
+        if image is None:
+            QMessageBox.warning(self, "提示", "请先粘贴或选择一张轴图。")
+            return
+
+        image_bytes, mime = encode_image(image)
+        self.ai_detect_btn.setEnabled(False)
+        self.ai_detect_btn.setText("识别中…")
+        self._set_ai_status(
+            f"正在请求 {model}（图片 {len(image_bytes) // 1024} KB）…")
+
+        self.ai_thread = AIDetectThread(
+            base_url, model, self.ai_api_key.text().strip(),
+            image_bytes, mime, self)
+        self.ai_thread.succeeded.connect(self._on_ai_ok)
+        self.ai_thread.failed.connect(self._on_ai_fail)
+        self.ai_thread.finished.connect(self._on_ai_finished)
+        self.ai_thread.start()
+
+    def _on_ai_finished(self):
+        self.ai_detect_btn.setEnabled(True)
+        self.ai_detect_btn.setText("识别并填充")
+
+    def _on_ai_ok(self, result):
+        try:
+            summary = self._apply_ai_result(
+                result, regenerate=self.ai_auto_generate.isChecked())
+        except Exception as exc:
+            self._on_ai_fail(f"结果无法套用：{exc}")
+            return
+        kind = "开关SET" if str(result.get("type", "")).lower() == "set" else "单次UB"
+        name = str(result.get("name") or "").strip() or "(未识别到轴名)"
+        self._set_ai_status(
+            f"识别完成：{kind} 轴「{name}」，{summary}。\n"
+            f"分享码已填入下方「分享码」框，可直接复制或点「一键分享」。")
+
+    def _on_ai_fail(self, message):
+        self._set_ai_status(f"识别失败：{message}", error=True)
+        QMessageBox.warning(self, "AI 识别失败", message)
+
+    def _schedule_ai_reapply(self, *args):
+        if self._ai_party_syncing or self.ai_last_result is None:
+            return
+        self._ai_apply_timer.start()
+
+    def _reapply_ai_result(self):
+        if self.ai_last_result is None or self._ai_party_syncing:
+            return
+        try:
+            # sync_party=False：这次就是要用「用户手改过的队伍顺序」重算，
+            # 不能拿上次识别结果里的 party 又盖回去。
+            summary = self._apply_ai_result(
+                self.ai_last_result, regenerate=False, sync_party=False)
+        except Exception as exc:
+            self._set_ai_status(f"按新队伍顺序重算失败：{exc}", error=True)
+            return
+        self._set_ai_status(f"已按新的队伍号位顺序重算：{summary}。分享码已更新。")
+
+    def _ai_party_list(self):
+        return parse_namelist(self.ai_party.text())
+
+    def _sync_party_field(self, names):
+        """把识别到的队伍写进输入框；期间屏蔽重算，避免自己触发自己。"""
+        names = [str(x).strip() for x in (names or []) if str(x).strip()]
+        if not names:
+            return
+        if self.ai_party.text().strip() == " ".join(names):
+            return
+        self._ai_party_syncing = True
+        self.ai_party.setText(" ".join(names))
+        self._ai_party_syncing = False
+
+    @staticmethod
+    def _parse_state(state):
+        """状态串 -> bool 列表。接受 o/O/1/开 与 x/X/0/关，允许 5 位或 6 位（含 auto）。"""
+        if state is None:
+            raise ValueError("识别结果里缺少状态串")
+        text = re.sub(r"[\s\u3000]+", "", str(state))
+        bits = []
+        for ch in text:
+            if ch in ("o", "O", "1", "开", "√", "是"):
+                bits.append(True)
+            elif ch in ("x", "X", "0", "关", "×"):
+                bits.append(False)
+            else:
+                raise ValueError(f"状态串里出现无法识别的字符「{ch}」")
+        if len(bits) not in (5, 6):
+            raise ValueError(f"状态串应为 5 位（或 6 位含 auto），实际 {len(bits)} 位")
+        return bits
+
+    @staticmethod
+    def _normalize_set_time(value, initial=False):
+        """时间 -> 三位数字字符串。支持 "1:11"、"111"、"56"、"初始状态"。"""
+        text = str(value if value is not None else "").strip()
+        if text in ("", "初始状态", "开局") and initial:
+            return "124"
+        if ":" in text:
+            minute, _, second = text.partition(":")
+            if not minute.strip().isdigit() or not second.strip().isdigit():
+                raise ValueError(f"时间「{value}」无法识别")
+            text = f"{int(minute)}{int(second):02d}"
+        if text.isdigit():
+            if len(text) == 1:
+                text = "00" + text
+            elif len(text) == 2:
+                text = "0" + text
+        if len(text) != 3 or not text.isdigit():
+            raise ValueError(f"时间「{value}」无法识别（应为 3 位数字或 M:SS）")
+        return text
+
+    @staticmethod
+    def _normalize_ub_time(value):
+        """倒计时 -> 'MSS' 三位数字，如 1:21 -> '121'。"""
+        text = str(value if value is not None else "").strip().lstrip("sS")
+        if ":" in text:
+            minute, _, second = text.partition(":")
+            return f"{int(minute)}{int(second):02d}"
+        if text.isdigit():
+            return text.zfill(3)
+        raise ValueError(f"倒计时「{value}」无法识别（应为 M:SS）")
+
+    @staticmethod
+    def _normalize_ub_op(op, party):
+        """轴图上的一个操作 -> 文本区能识别的写法。
+
+        文本区沿用 process_text 的约定（角色名 / 角色名AUTO / k / d数字），
+        所以这里只做「同义词归一」，不做角色名到数字的替换。
+        """
+        text = str(op if op is not None else "").strip()
+        if not text or text in ("-", "—", "无", "空"):
+            return ""
+        # 模型直接给了指令串
+        if text in ("k", "K"):
+            return "k"
+        # 延时
+        match = re.fullmatch(r"(?:延时|延迟|delay)\s*(\d+)", text, re.I)
+        if match:
+            return "d" + match.group(1)
+        match = re.fullmatch(r"(\d+)\s*[秒sS]", text)
+        if match:
+            return "d" + match.group(1)
+
+        # AUTO 可能写在括号里（轴图上有「瓜智(115 AUTO)」这种），
+        # 所以要在删括号之前先在原文里找一次
+        auto = "auto" in text.lower()
+        note = " ".join(re.findall(r"[\(（]([^\)）]*)[\)）]", text))
+        core = re.sub(r"[\(（][^\)）]*[\)）]", "", text).strip()
+        core = re.sub(r"(?i)auto$", "", core).strip()
+
+        # 卡帧类字眼。放在角色名判断之前，否则「黑骑（速压破甲）」会被当成点黑骑
+        if (any(word in text for word in UB_FRAME_WORDS)
+                or any(word in note for word in UB_FRAME_WORDS_IN_NOTE)):
+            return "k"
+        # 「克*2」这类连点写法
+        match = re.fullmatch(r"(.+?)\s*[*×xX]\s*(\d+)", core)
+        if match and match.group(1).strip() in party:
+            name = match.group(1).strip()
+            times = max(1, int(match.group(2)))
+            return " ".join([name + ("AUTO" if auto else "")] * times)
+        if core in party:
+            return core + ("AUTO" if auto else "")
+        if re.fullmatch(r"[0-9aAkKsSdD]+", core):
+            return core
+        raise ValueError(f"操作「{op}」不在队伍号位里：{party}")
+
+    def _build_set_rows(self, rows_json, party):
+        """SET：识别结果 -> set_input() 需要的 (rows, td)。"""
+        slot = {name: index + 1 for index, name in enumerate(party)}
+        rows, td = [], {}
+        for index, row in enumerate(rows_json):
+            time = self._normalize_set_time(row.get("time"), initial=(index == 0))
+            time_point = row.get("time_point")
+            if time_point is None:
+                trigger = str(row.get("trigger") or "").strip()
+                if row.get("stuck") or trigger in ("卡帧", "卡"):
+                    time_point = 6
+                elif trigger in ("", "-", "_", "/", "无", "普攻后"):
+                    time_point = 0
+                elif trigger.lower() in ("boss", "bossub"):
+                    time_point = 0
+                elif trigger in slot:
+                    time_point = slot[trigger]
+                else:
+                    raise ValueError(
+                        f"第 {index + 1} 行的触发角色「{trigger}」不在队伍号位里：{party}")
+            time_point = str(int(time_point))
+            bits = self._parse_state(row.get("state"))
+            if len(bits) == 5:
+                bits.append(bool(row.get("auto")))
+            rows.append((time, time_point, bits))
+            delay = row.get("delay")
+            if delay not in (None, "", 0, "0"):
+                td[index] = float(delay)
+        return rows, td
+
+    def _build_ub_lines(self, rows_json, party):
+        """单次UB：识别结果 -> 文本区要显示的若干行。"""
+        lines = []
+        for row in rows_json:
+            pieces = []
+            if row.get("time") not in (None, ""):
+                pieces.append("s" + self._normalize_ub_time(row.get("time")))
+            ops = row.get("ops")
+            if ops is None:
+                ops = row.get("op") or []
+            if isinstance(ops, str):
+                ops = parse_namelist(ops)
+            for op in ops:
+                # 一格里的多条操作，模型可能写成「黑骑（速压破甲）-星猫」，
+                # 这里先按分隔符拆开，再逐条归一
+                for piece in re.split(UB_OP_SEPARATORS, str(op)):
+                    if not piece:
+                        continue
+                    converted = self._normalize_ub_op(piece, party)
+                    if converted:
+                        pieces.append(converted)
+            if pieces:
+                lines.append(" ".join(pieces))
+        if not lines:
+            raise ValueError("识别结果里一条操作都没有")
+        return lines
+
+    def _apply_ai_result(self, result, regenerate=False, sync_party=True):
+        """把识别结果填进界面并切到对应模式，返回一句摘要。"""
+        rows_json = result.get("rows") or []
+        if not rows_json:
+            raise ValueError("识别结果里没有任何行")
+        name = str(result.get("name") or "").strip()
+        if sync_party:
+            self._sync_party_field(result.get("party"))
+        party = self._ai_party_list()
+        self.ai_last_result = result
+
+        if str(result.get("type", "")).lower() == "set":
+            rows, td = self._build_set_rows(rows_json, party)
+            self._set_mode("set")
+            if name:
+                self.input_box.setText(name)
+            self.set_input(rows, td)
+            code = sharecode.to_share(rows, td)
+            self.share_box.setText(f"{name}:{code}" if name else code)
+            if regenerate:
+                self.usecontent(rows, td)
+            return f"{len(rows)} 行"
+
+        # 单次UB
+        if len(party) != 5:
+            raise ValueError(f"单次UB 需要 5 个角色名，本次识别到 {len(party)} 个")
+        lines = self._build_ub_lines(rows_json, party)
+        self._set_mode("ub")
+        if name:
+            self.input_box.setText(name)
+        self.char_input.setText(" ".join(party))
+        self.text_edit.setPlainText("\n".join(lines))
+        instruction = self.process_text("\n".join(lines), party)
+        self.share_box.setText(f"{name}#{instruction}#{' '.join(party)}")
+        if regenerate:
+            self.usecontent(None, {})
+        return f"{len(lines)} 行 / 指令 {len(instruction)} 字符"
+
+    def _set_mode(self, mode):
+        """切换模式：mode 取 "set" / "ub" / "ai"。
+
+        原先是表格 / 文本两态，靠 is_text_mode 布尔量表示；加入 AI 模式后
+        统一走这里，并把 is_text_mode 作为「是否单次UB」的派生量同步维护，
+        这样原有那些判断 is_text_mode 的代码路径不用改动。
+        """
+        if mode not in ("set", "ub", "ai"):
+            mode = "set"
+        if mode != "ub":
             self.char_input.clear()
-            self.is_text_mode = True
-        else:
-            self.text_edit.hide()
-            self.table.show()
-            self.char_input.clear()
-            self.is_text_mode = False
-        self._sync_char_input_mode()
+        self.mode = mode
+        self.is_text_mode = (mode == "ub")
+        self.table.setVisible(mode == "set")
+        self.text_edit.setVisible(mode == "ub")
+        self.ai_panel.setVisible(mode == "ai")
+        self.char_label.setVisible(mode == "ub")
+        self.char_input.setVisible(mode == "ub")
+        for name, action in self.mode_actions.items():
+            action.setChecked(name == mode)
+
+    def keyPressEvent(self, event):
+        """AI 模式下按 Ctrl+V 直接粘贴剪贴板里的图。
+
+        放在窗口级是为了「焦点不在图片区时也能粘贴」；焦点在输入框里时
+        QLineEdit 会自己消费掉 Ctrl+V，不会走到这里。
+        """
+        if self.mode == "ai" and event.matches(QKeySequence.Paste):
+            self._paste_image()
+            return
+        super().keyPressEvent(event)
 
     def sender_row(self, sender_button):
         """由按钮反查它所在的行号，无法确定时返回 -1。
@@ -541,8 +1293,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         try:
             if '#' in a:
                 # 自动切换到单次UB
-                if not self.is_text_mode:
-                    self.switch_mode()
+                self._set_mode("ub")
                 # 解析单次UB分享码
                 stepname, content, td = a.split('#')
                 if len(stepname) >= 5 and stepname[:5].isdigit():
@@ -559,8 +1310,9 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                 return
             else:
                 # 自动切换到开关SET模式
-                if self.is_text_mode:
-                    self.switch_mode()
+                # 必须直接指定目标模式：从 AI 模式进来时 is_text_mode 是 False，
+                # 靠它判断「要不要切」会以为已经在 SET 模式，结果表格填好了界面还停在 AI 面板
+                self._set_mode("set")
                 # ...existing code...
                 if ":" in a:
                     parts = a.split(":")
@@ -751,6 +1503,12 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             
             # 清空分享码
             self.share_box.clear()
+
+            # 清空 AI 识别区（图片与上次识别结果）
+            self.ai_image.clearImage()
+            self.ai_party.clear()
+            self.ai_last_result = None
+            self._set_ai_status("")
 
     def process_text(self,text, namelist):
         # 1. 替换角色名为数字

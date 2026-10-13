@@ -454,3 +454,6 @@ tools/ImageCropper/**/*.png
 
 # WorkBuddy 工作记忆，不属于源码
 .workbuddy/
+
+# AI 识别模式的接口配置（含明文 API Key，绝不入库）
+/ai_config.json
