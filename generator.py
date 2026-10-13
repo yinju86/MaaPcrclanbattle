@@ -34,9 +34,12 @@ def parse_namelist(text):
 # 接口配置存在程序目录下的 ai_config.json（含明文 API Key，已加进 .gitignore）
 AI_CONFIG_PATH = Path(__file__).parent / "ai_config.json"
 
+# 默认走 DeepSeek：OpenAI 兼容格式，base_url 不需要带 /v1，
+# 代码会自动补 /chat/completions。deepseek-flash 原生支持图片输入，
+# 直接吃 image_url 的 base64 data URL，无需另开 vision 专用模型。
 DEFAULT_AI_CONFIG = {
-    "base_url": "https://api.openai.com/v1",
-    "model": "gpt-4o",
+    "base_url": "https://api.deepseek.com",
+    "model": "deepseek-flash",
     "api_key": "",
     "auto_generate": True,
 }
@@ -51,6 +54,30 @@ UB_FRAME_WORDS_IN_NOTE = ("押", "破甲", "速压", "唱名", "卡帧", "目押
 # 拆操作串用的分隔符：模型有时会把一格里的多条操作写成「A - B」
 UB_OP_SEPARATORS = r"[\s\-–—、,，/]+"
 
+
+def split_ub_ops(text):
+    """按分隔符拆一格里的多条操作，但括号内部的不算分隔符。
+
+    「克*2(38-37)」里的连字符必须整体保留：一旦拆成「克*2(38」和「37)」，
+    哪一条都归一不了，整条轴会卡在报错上。
+    """
+    parts, buf, depth = [], [], 0
+    for ch in str(text):
+        if ch in "(（":
+            depth += 1
+        elif ch in ")）":
+            depth = max(0, depth - 1)
+        elif depth == 0 and re.fullmatch(UB_OP_SEPARATORS, ch):
+            if buf:
+                parts.append("".join(buf))
+                buf = []
+            continue
+        buf.append(ch)
+    if buf:
+        parts.append("".join(buf))
+    return [piece.strip() for piece in parts if piece.strip()]
+
+
 # 可接受的图片扩展名（剪贴板与拖拽都按它过滤）
 IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg", ".webp", ".bmp", ".gif")
 
@@ -63,34 +90,48 @@ AI_PROMPT = """你是《公主连结 Re:Dive》会战轴图的识别助手。用
 - 图上有「状态 / 开关」列（形如 xOOXX 的 5 位串，外加一个单独的 auto 开关列）→ type 填 "set"
 - 操作列是「角色名 / XX AUTO / BOSS UB / 卡帧」这类流水账，没有开关列 → type 填 "ub"
 
+【两种类型共用的 party 字段（最容易错，务必按这个来）】
+party 是队伍 1→5 号位的角色名，必须按图左侧队伍头像行**从左到右**的顺序填：
+- 最左边那个敌方 / BOSS 头像不算，从它右边第一个头像开始才是 1 号位
+- 头像下面通常只有属性、等级，没有名字，要靠头像认角色
+- 标题、文件名、备注里那串名字的顺序**经常和号位顺序不一样**，
+  绝对不要直接拿标题里的顺序当 party
+- 实在认不出某个头像是谁时，从标题里没被用到的名字里挑一个补上
+
 【type = set 的输出格式】
 {"type":"set","name":"轴名","party":["1号位","2号位","3号位","4号位","5号位"],
  "rows":[{"time":"124","trigger":null,"state":"xOOXX","auto":true,"delay":null}]}
 - time：三位数字。图上写 1:11 就填 "111"，写 56 就填 "056"；「开局 / 初始状态」固定填 "124"
-- trigger：该行标注的触发角色名。写的是「普攻后 / 无 UB / BOSS」时填 null
+- trigger：照抄该行标注的触发角色的原名。
+  只有这一格是空的、或写的是「普攻后 / 无 UB」这类没有角色名的，才填 null；
+  写的是「BOSS」就照抄 "BOSS"
 - state：5 位字符串，O 表示开、X 表示关，从左到右依次是 1→5 号位，必须恰好 5 位
 - auto：图上单独标注的「开 / 关」，布尔值
 - delay：只有图上明示了秒数才填数字，否则填 null
 
 【type = ub 的输出格式】
 {"type":"ub","name":"轴名","party":["1号位","2号位","3号位","4号位","5号位"],
- "rows":[{"time":"1:21","ops":["克AUTO"]},{"ops":["瓜智AUTO","克"]}]}
-- party 按图上 1→5 号位的顺序
-- time：只写在「需要重新校准倒计时」的段落起点（例如押跳秒处、BOSS UB 之后那一段的开头），
-  其余行省略 time 字段
-- ops：逐条照抄图上的操作，规则如下
-    普通角色名                                → "角色名"
-    「XX AUTO」                               → "角色名AUTO"
-    「卡帧 / 目押 / 押跳秒 / 唱名 / 速压破甲」  → "k"
-    「克*2」这种连点写法                       → 拆成两条 "克","克"
-    括号里的说明文字和伤害数字                 → 全部丢掉
-    BOSS UB 这一行本身不产生操作               → ops 填 []
-- 一行里写了多个不同时刻的操作（如「1:21 克(AUTO) - 瓜智(115 AUTO)」）时，拆成多行
+ "rows":[{"time":"1:21","ops":["克(AUTO)","瓜智(115 AUTO)"]},{"ops":["克"]}]}
+- time：**绝大多数行都不要写 time**，只在这两种行写：
+    · 整条轴的第一行
+    · 紧跟在「BOSS UB」那一行之后、第一个带操作的行
+  写 time 会让脚本停下来死等倒计时读到那个秒数，写多了会卡死；
+  其余行一律省略 time 字段（图上的秒数列是给人看的参考，不用逐行抄）
+- ops：**把「操作」那一格的内容原样照抄下来，一个字都不要改、不要省、不要自己翻译**：
+    · 括号要保留：看到「瓜智(48 AUTO)」就抄 "瓜智(48 AUTO)"，不要改写成 "瓜智AUTO"
+    · 连点要保留：看到「克*2(38-37)」就抄 "克*2(38-37)"，不要拆成两条
+    · 里面的数字要保留，即使看起来像伤害数字
+    · 一格写成「火电 - 瓜智 - 克(56)」这种带「-」的，拆成三条："火电"、"瓜智"、"克(56)"
+    · 「卡帧 / 目押 / 押跳秒 / 唱名 / 速压破甲」这些字眼也原样抄下来，不要换成别的写法
+    · 「BOSS UB」这一格不产生操作 → ops 填 []
+    · 只抄「操作」列；「伤害」「说明」「备注」「贴图区」列的文字一律不要抄进来
+    · 图上几行就输出几行，不要跳过行，也不要把两行并成一行
 
 【通用】
 - 字段不确定时宁可不填，绝对不要编造
 - 时间、角色名、开关状态必须与图上完全一致
-- 图上没有单独列队伍名单时，从角色头像行或标题里按号位顺序推断 party"""
+- 不要自己把角色名换成数字，也不要自己把「卡帧 / 速压破甲」翻译成 k——
+  这些和括号里的内容都由程序解析，你只管如实照抄"""
 
 
 def image_from_clipboard():
@@ -272,6 +313,18 @@ class ImageDropLabel(QLabel):
                 event.acceptProposedAction()
 
 
+def is_deepseek_endpoint(base_url, model):
+    """判断是不是 DeepSeek（官方域名或模型名里带 deepseek）。
+
+    DeepSeek 的 chat 接口默认开着「思考模式」，而识别轴图是纯感知任务：
+    实测 1920x547 的轴图，默认模式下推理 token 会把 max_tokens 整个吃光
+    （finish_reason=length、reasoning_tokens=max_tokens），正文 content 为空，
+    识别必然失败。所以要显式带 thinking=disabled 关掉它。
+    这个字段别的厂商不认，只在 DeepSeek 上带，避免污染通用请求体。
+    """
+    return "deepseek" in f"{base_url} {model}".lower()
+
+
 class AIDetectThread(QThread):
     """后台调用 OpenAI 兼容的对话接口识别轴图，避免阻塞界面。"""
 
@@ -295,7 +348,7 @@ class AIDetectThread(QThread):
             payload = {
                 "model": self.model,
                 "temperature": 0,
-                "max_tokens": 4000,
+                "max_tokens": 8000,
                 "messages": [
                     {"role": "system", "content": AI_PROMPT},
                     {"role": "user", "content": [
@@ -305,6 +358,9 @@ class AIDetectThread(QThread):
                     ]},
                 ],
             }
+            if is_deepseek_endpoint(self.base_url, self.model):
+                # 关掉思考模式，否则推理 token 会把 max_tokens 吃光、正文为空
+                payload["thinking"] = {"type": "disabled"}
             headers = {"Content-Type": "application/json"}
             if self.api_key:
                 headers["Authorization"] = f"Bearer {self.api_key}"
@@ -312,10 +368,23 @@ class AIDetectThread(QThread):
             if response.status_code != 200:
                 raise RuntimeError(f"HTTP {response.status_code}：{response.text[:400]}")
             data = response.json()
-            content = data["choices"][0]["message"]["content"]
+            choice = (data.get("choices") or [{}])[0]
+            message = choice.get("message") or {}
+            content = message.get("content")
             if isinstance(content, list):
                 content = "".join(
                     part.get("text", "") for part in content if isinstance(part, dict))
+            content = (content or "").strip()
+            if not content:
+                # 只拿到思考过程、没有正文，是最容易踩的一脚，报清楚原因
+                usage = data.get("usage") or {}
+                details = usage.get("completion_tokens_details") or {}
+                raise RuntimeError(
+                    "模型只返回了思考过程、没有正文"
+                    f"（finish_reason={choice.get('finish_reason')}，"
+                    f"reasoning_tokens={details.get('reasoning_tokens')}，"
+                    f"max_tokens={payload['max_tokens']}）。"
+                    "把 max_tokens 调大或换用能关闭思考的模型再试。")
             self.succeeded.emit(parse_ai_json(content))
         except Exception as exc:
             self.failed.emit(f"{type(exc).__name__}: {exc}")
@@ -499,7 +568,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         row1.addWidget(QLabel("接口地址："))
         self.ai_base_url = QLineEdit()
         self.ai_base_url.setPlaceholderText(
-            "OpenAI 兼容接口，如 https://api.openai.com/v1")
+            "OpenAI 兼容接口，默认 https://api.deepseek.com")
         row1.addWidget(self.ai_base_url)
         outer.addLayout(row1)
 
@@ -507,7 +576,8 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         row2 = QHBoxLayout()
         row2.addWidget(QLabel("模型："))
         self.ai_model = QLineEdit()
-        self.ai_model.setPlaceholderText("需要支持图片输入，如 gpt-4o / qwen-vl-max")
+        self.ai_model.setPlaceholderText(
+            "需要支持图片输入，默认 deepseek-flash；也可填 gpt-4o / qwen-vl-max")
         row2.addWidget(self.ai_model)
         row2.addWidget(QLabel("API Key："))
         self.ai_api_key = QLineEdit()
@@ -583,11 +653,16 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         self.ai_party.textChanged.connect(self._schedule_ai_reapply)
 
     def _load_ai_config(self):
+        """读本地配置；缺项或空串一律退回默认值（默认 DeepSeek）。"""
         config = dict(DEFAULT_AI_CONFIG)
         try:
             stored = json.loads(AI_CONFIG_PATH.read_text(encoding="utf-8"))
             if isinstance(stored, dict):
-                config.update(stored)
+                for key, value in stored.items():
+                    # 空串当作「没配过」，否则把输入框清空一次就再也回不到默认值
+                    if isinstance(value, str) and not value.strip():
+                        continue
+                    config[key] = value
         except Exception:
             pass
         return config
@@ -684,9 +759,15 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             return
         kind = "开关SET" if str(result.get("type", "")).lower() == "set" else "单次UB"
         name = str(result.get("name") or "").strip() or "(未识别到轴名)"
-        self._set_ai_status(
-            f"识别完成：{kind} 轴「{name}」，{summary}。\n"
-            f"分享码已填入下方「分享码」框，可直接复制或点「一键分享」。")
+        message = (f"识别完成：{kind} 轴「{name}」，{summary}。\n"
+                   f"分享码已填入下方「分享码」框，可直接复制或点「一键分享」。")
+        if kind == "开关SET":
+            # 轴图上没有号位数字，时点只能靠队伍号位顺序推；这一步最容易错，
+            # 所以明确提示用户核对一次（改上面那个框会自动重算）。
+            message += ("\nSET 的「时点」是按上面的「队伍号位顺序」推算的，"
+                        "这里最容易错，请和游戏内的站位核对一下；"
+                        "不对就直接改那个输入框，分享码会自动重算。")
+        self._set_ai_status(message)
 
     def _on_ai_fail(self, message):
         self._set_ai_status(f"识别失败：{message}", error=True)
@@ -786,6 +867,12 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         # 模型直接给了指令串
         if text in ("k", "K"):
             return "k"
+        # BOSS UB 这类不是操作。模型经常把 BOSS 行抄成 ops:["UB"] 或 "BOSS"，
+        # 只在「一个汉字都没有」时才这样判定，免得把角色名当垃圾丢掉。
+        if not re.search(r"[\u4e00-\u9fff]", text):
+            letters = re.sub(r"[^A-Za-z]", "", text).lower()
+            if letters in ("boss", "ub", "bossub", "ubboss"):
+                return ""
         # 延时
         match = re.fullmatch(r"(?:延时|延迟|delay)\s*(\d+)", text, re.I)
         if match:
@@ -826,11 +913,13 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             time_point = row.get("time_point")
             if time_point is None:
                 trigger = str(row.get("trigger") or "").strip()
-                if row.get("stuck") or trigger in ("卡帧", "卡"):
+                lowered = trigger.lower()
+                if row.get("stuck") or trigger in ("卡帧", "卡", "卡帧目押"):
                     time_point = 6
-                elif trigger in ("", "-", "_", "/", "无", "普攻后"):
-                    time_point = 0
-                elif trigger.lower() in ("boss", "bossub"):
+                # 「普攻后 / 无 UB / BOSS UB」这类都不是角色触发的行，时点记 0。
+                # BOSS 用「包含」判断，免得「BOSS UB」「boss」等写法漏网。
+                elif (trigger in ("", "-", "_", "/", "无", "普攻后")
+                      or "boss" in lowered or trigger.startswith("普攻")):
                     time_point = 0
                 elif trigger in slot:
                     time_point = slot[trigger]
@@ -849,7 +938,7 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
 
     def _build_ub_lines(self, rows_json, party):
         """单次UB：识别结果 -> 文本区要显示的若干行。"""
-        lines = []
+        lines, unknown = [], []
         for row in rows_json:
             pieces = []
             if row.get("time") not in (None, ""):
@@ -860,16 +949,25 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             if isinstance(ops, str):
                 ops = parse_namelist(ops)
             for op in ops:
-                # 一格里的多条操作，模型可能写成「黑骑（速压破甲）-星猫」，
-                # 这里先按分隔符拆开，再逐条归一
-                for piece in re.split(UB_OP_SEPARATORS, str(op)):
-                    if not piece:
+                # 一格里的多条操作，模型可能写成「黑骑（速压破甲）- 星猫」，
+                # 这里先按分隔符拆开，再逐条归一。括号里的「-」不能当分隔符，
+                # 否则 克*2(38-37) 会被切成两条废串。
+                for piece in split_ub_ops(op):
+                    try:
+                        converted = self._normalize_ub_op(piece, party)
+                    except ValueError:
+                        # 攒起来一起报，省得用户改一个又冒出下一个
+                        unknown.append(piece)
                         continue
-                    converted = self._normalize_ub_op(piece, party)
                     if converted:
                         pieces.append(converted)
             if pieces:
                 lines.append(" ".join(pieces))
+        if unknown:
+            listed = "、".join(dict.fromkeys(unknown))
+            raise ValueError(
+                f"这些操作认不出来：{listed}。多半是队伍号位顺序不对，"
+                "改上面的「队伍号位顺序」后会自动重算")
         if not lines:
             raise ValueError("识别结果里一条操作都没有")
         return lines
