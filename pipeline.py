@@ -36,16 +36,20 @@ def _split_offset(stepname):
 
 
 def _entry_nodes(stepname, first_node, start_tip=None):
-    """开场节点：entry / start / start0 / start2 / autoc / ljfdc / ljfd / autoo。
+    """开场节点：entry / start / start0 / start2 / fh / autoc / ljfdc / ljfd / autoo。
 
     first_node: ljfdc / ljfd 之后跳转的第一个节点名
                 SET 模式为 {stepname}tc_0，单次UB 模式为 {stepname}0
     start_tip : 单次UB 模式在 start 节点额外给出提示，SET 模式为 None
+
+    entry 依次尝试 start / start0 / fh 三条入口，fh 为补充入口：
+    命中 fh.png 时点击后同样汇入 start2 的去向（autoc / autoo）。
     """
     nodes = {}
+    start2_next = [f"{stepname}autoc", f"{stepname}autoo"]
 
     nodes[f"{stepname}entry"] = {
-        "next": [f"{stepname}start", f"{stepname}start0"],
+        "next": [f"{stepname}start", f"{stepname}start0", f"{stepname}fh"],
     }
 
     start = {
@@ -81,7 +85,15 @@ def _entry_nodes(stepname, first_node, start_tip=None):
         "post_delay": 15,
         "rate_limit": 30,
         "timeout": 500000,
-        "next": [f"{stepname}autoc", f"{stepname}autoo"],
+        "next": start2_next,
+    }
+
+    nodes[f"{stepname}fh"] = {
+        "recognition": "TemplateMatch",
+        "threshold": [0.9],
+        "template": ["fh.png"],
+        "action": "Click",
+        "next": start2_next,
     }
 
     nodes[f"{stepname}autoc"] = {

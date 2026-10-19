@@ -58,6 +58,9 @@
 
 先选好队伍进模拟战再退出，让游戏停在预备挑战界面。**本工具不负责自动选人。**
 
+也可以直接从**暂停界面**开始（V4.0.1 起）：脚本开场多认一条 `fh.png`（暂停界面的返回按钮），
+命中就先点掉它，再接着开 auto / 开连击，不必每次都退回预备挑战界面。
+
 ### 4. 运行 MFAWPF.exe，执行脚本
 
 在 MFAWPF 的任务列表里选刚生成的脚本名即可。
@@ -227,7 +230,7 @@ python generator.py
 
 # 4. 打完整安装目录：先把 MaaFramework 和 MFAWPF 下好
 #    MaaFramework 解压到 deps/，MFAWPF.exe 放到 MFA/（版本见 .github/workflows/install.yml）
-python install.py v4.0.0
+python install.py v4.0.1
 cp MFA/MFAWPF.exe install/
 
 # 5. 打包 exe
