@@ -163,6 +163,27 @@ def _finish_node(expected):
     }
 
 
+def register_task(stepname):
+    """把轴名登记进 interface.json 的 task 列表（幂等）。返回是否新写入。"""
+    try:
+        with open('interface.json', 'r', encoding='utf-8') as json_file:
+            interface_data = json.load(json_file)
+    except Exception:                                  # noqa: BLE001
+        return False
+
+    tasks = interface_data.setdefault('task', [])
+    if any(task.get('name') == stepname for task in tasks):
+        return False
+
+    tasks.append({
+        "name": f"{stepname}",
+        "entry": f"{stepname}entry",
+    })
+    with open('interface.json', 'w', encoding='utf-8') as json_file:
+        json.dump(interface_data, json_file, indent=4, ensure_ascii=False)
+    return True
+
+
 def _save_and_register(stepname, nodes):
     """写 resource/pipeline/{stepname}.json，并向 interface.json 注册同名 task。
 
@@ -173,16 +194,7 @@ def _save_and_register(stepname, nodes):
     with open(script_path, 'w', encoding='utf-8') as json_file:
         json.dump(nodes, json_file, indent=4, ensure_ascii=False)
 
-    with open('interface.json', 'r', encoding='utf-8') as json_file:
-        interface_data = json.load(json_file)
-
-    if not any(task.get('name') == stepname for task in interface_data.get('task', [])):
-        interface_data['task'].append({
-            "name": f"{stepname}",
-            "entry": f"{stepname}entry",
-        })
-        with open('interface.json', 'w', encoding='utf-8') as json_file:
-            json.dump(interface_data, json_file, indent=4, ensure_ascii=False)
+    register_task(stepname)
 
     return script_path
 

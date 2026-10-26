@@ -464,3 +464,7 @@ tools/ImageCropper/**/*.png
 
 # AI 识别模式的接口配置（含明文 API Key，绝不入库）
 /ai_config.json
+
+# 在线轴同步的运行时文件：手动删掉的轴名单、最近一次成功取数的缓存
+/不自动获取的轴.txt
+/在线轴缓存.json

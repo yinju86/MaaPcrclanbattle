@@ -8,12 +8,14 @@ import sharecode
 import json
 from pathlib import Path
 import webbrowser
-import requests  # 添加到文件顶部的imports中
+import requests  # AI 识别模式的接口调用需要
 import pipeline
 from pipeline import build_set_steps
 import re
+import time
 import cli  # 程序目录 / 版本号 / 命令行接口，GUI 与 CLI 共用同一份
 from cli import app_dir, get_version
+import sync_tencent_sheet as tdoc  # 在线轴取数：腾讯文档公开分享表
 
 
 def parse_namelist(text):
@@ -23,6 +25,106 @@ def parse_namelist(text):
     避免 "雪  狐" 这类输入切出空串导致角色名与位置错位。
     """
     return text.split()
+
+
+# ================================================================ 屏蔽名单
+# 用户手动删掉的脚本会记进这个文件，之后自动/手动同步都不再把它拉回来。
+# 纯文本、一行一个名字，想恢复某个轴直接删掉对应行即可。
+BLOCKED_FILE = "不自动获取的轴.txt"
+
+
+def base_script_name(name):
+    """去掉脚本名前 5 位的 UB 亮条偏移标记，得到用于比对的基础名。"""
+    if len(name) >= 5 and name[:5].isdigit():
+        return name[5:]
+    return name
+
+
+def script_key(name):
+    """比对用的脚本名归一化：去偏移前缀 + 去首尾空白 + 忽略大小写。
+
+    必须忽略大小写——Windows 文件名不分大小写，`35769W` 和 `35769w`
+    会落到同一个 .json 上，只比原始字符串的话会重复生成、后一个覆盖前一个。
+    """
+    return base_script_name(str(name or "").strip()).strip().casefold()
+
+
+def load_blocked():
+    path = app_dir() / BLOCKED_FILE
+    if not path.exists():
+        return set()
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception as e:                            # noqa: BLE001
+        print(f"读取屏蔽列表失败：{e}")
+        return set()
+    return {ln.strip() for ln in lines if ln.strip() and not ln.startswith("#")}
+
+
+def add_blocked(name):
+    """把脚本记入屏蔽名单（幂等）。"""
+    name = base_script_name(name).strip()
+    if not name:
+        return
+    names = load_blocked()
+    if name in names:
+        return
+    names.add(name)
+    try:
+        (app_dir() / BLOCKED_FILE).write_text(
+            "\n".join(sorted(names)) + "\n", encoding="utf-8")
+    except Exception as e:                            # noqa: BLE001
+        print(f"写入屏蔽列表失败：{e}")
+
+
+def clear_blocked():
+    """清空屏蔽名单，恢复全部自动获取。返回清掉的条数。"""
+    names = load_blocked()
+    try:
+        path = app_dir() / BLOCKED_FILE
+        if path.exists():
+            path.unlink()
+    except Exception as e:                            # noqa: BLE001
+        print(f"清空屏蔽列表失败：{e}")
+    return len(names)
+
+
+# ================================================================ 在线轴缓存
+# 腾讯文档对同一 IP 的请求有频率限制，短时间内反复同步会拿到不含数据的空壳页。
+# 所以成功取到时把结果落盘，取数失败就退回缓存，同时限制静默同步的频率。
+CACHE_FILE = "在线轴缓存.json"
+CACHE_TTL = 7 * 24 * 3600        # 缓存最长可用 7 天
+AUTO_SYNC_INTERVAL = 30 * 60     # 静默同步的最小间隔（秒）
+
+
+def load_cache():
+    """返回 {'ts','saved_at','codes','meta'}；没有或已过期则返回 None。"""
+    path = app_dir() / CACHE_FILE
+    if not path.exists():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:                                 # noqa: BLE001
+        return None
+    if not isinstance(data.get("codes"), list) or not data["codes"]:
+        return None
+    if time.time() - float(data.get("ts", 0)) > CACHE_TTL:
+        return None
+    return data
+
+
+def save_cache(codes, meta):
+    try:
+        payload = {
+            "ts": time.time(),
+            "saved_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "codes": codes,
+            "meta": meta,
+        }
+        (app_dir() / CACHE_FILE).write_text(
+            json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:                            # noqa: BLE001
+        print(f"写在线轴缓存失败：{e}")
 
 
 # ================================================================ AI 模式
@@ -416,6 +518,20 @@ class AIDetectThread(QThread):
 
 
 
+class SharedSyncThread(QThread):
+    """后台抓在线轴，别卡界面。"""
+
+    done = pyqtSignal(object, object)   # codes, meta
+    fail = pyqtSignal(str)
+
+    def run(self):
+        try:
+            codes, meta = tdoc.fetch_codes()
+            self.done.emit(codes, meta)
+        except Exception as e:                      # noqa: BLE001
+            self.fail.emit(str(e))
+
+
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -426,7 +542,12 @@ class MainWindow(QWidget):
         self.ai_last_result = None    # 最近一次识别结果（改队伍顺序时重新套用）
         self.ai_thread = None
         self._ai_party_syncing = False
+        self._sync_thread = None      # 在线轴同步线程
+        self._sync_silent = True      # 当前这次同步是否静默
         self.initUI()
+        # 启动后静默同步一次在线轴：延迟 2 秒，等窗口和表格先铺好。
+        # 静默 = 不管成功失败都不弹窗，只往控制台打一行。
+        QTimer.singleShot(2000, self._auto_sync_shared_scripts)
 
     def initUI(self):
         self.setWindowTitle('轴输入窗口')
@@ -457,6 +578,9 @@ class MainWindow(QWidget):
         
         manage_action = script_menu.addAction('管理脚本')
         manage_action.triggered.connect(self.show_script_manager)
+
+        clear_blocked_action = script_menu.addAction('清空屏蔽列表')
+        clear_blocked_action.triggered.connect(self.on_clear_blocked)
         
         help_menu = QMenu('帮助', self)
         self.menu_bar.addMenu(help_menu)
@@ -1540,6 +1664,14 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         script_list.setHorizontalHeaderLabels(['脚本名称', '操作'])
         script_list.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(script_list)
+
+        blocked_n = len(load_blocked())
+        hint = QLabel(
+            f'删除的脚本会记入「{BLOCKED_FILE}」，之后同步不再自动拉回'
+            + (f'（当前已屏蔽 {blocked_n} 个）' if blocked_n else ''))
+        hint.setWordWrap(True)
+        hint.setStyleSheet('color: #888; font-size: 11px;')
+        layout.addWidget(hint)
         
         try:
             # 读取 interface.json
@@ -1568,7 +1700,10 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
             pipeline_path = Path('resource/pipeline') / f'{script_name}.json'
             if pipeline_path.exists():
                 pipeline_path.unlink()
-            
+
+            # 手动删除即拉黑：记进屏蔽名单，之后同步不再把它自动拉回来
+            add_blocked(script_name)
+
             # 更新 interface.json
             with open('interface.json', 'r', encoding='utf-8') as f:
                 data = json.load(f)
@@ -1586,6 +1721,21 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
                     break
         except Exception as e:
             QMessageBox.warning(self, '错误', f'删除脚本失败：{str(e)}')
+
+    def on_clear_blocked(self):
+        """清空「不自动获取的轴」名单，让这些轴重新参与自动同步。"""
+        count = len(load_blocked())
+        if not count:
+            QMessageBox.information(self, '屏蔽列表', '当前没有被屏蔽的轴。')
+            return
+        reply = QMessageBox.question(
+            self, '清空屏蔽列表',
+            f'当前屏蔽了 {count} 个轴（你手动删除过的）。\n'
+            f'清空后它们会被重新自动同步拉回来，确定吗？',
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            removed = clear_blocked()
+            QMessageBox.information(self, '屏蔽列表', f'已清空 {removed} 条屏蔽记录。')
 
     def clear_all_content(self):
         # 弹出确认对话框
@@ -1635,117 +1785,225 @@ k---卡帧,卡帧结束请自行set后点击设定键''')
         text = re.sub(r'[、\-–－]', '', text)
         return text
 
+    # ---------------- 在线轴同步（腾讯文档公开分享表） ----------------
     def get_shared_scripts(self):
-        try:
-            # 发送请求获取共享轴数据
-            url = "https://gist.githubusercontent.com/yinju86/c9b79ca9910bb8f853c6f0addc94f9a6/raw/sharecode.txt"
-            response = requests.get(url, timeout=10)
-            response.encoding = 'utf-8'
-            
-            if response.status_code != 200:
-                raise Exception("网络请求失败")
+        """菜单「获取在线轴」：同步并汇报结果。"""
+        self._start_sync(silent=False)
 
-            # 获取现有脚本名称列表
-            existing_scripts = set()
+    def _auto_sync_shared_scripts(self):
+        """程序启动后静默同步一次，不打扰用户。"""
+        cache = load_cache()
+        if cache and time.time() - float(cache.get("ts", 0)) < AUTO_SYNC_INTERVAL:
+            return                                      # 刚同步过，别去撞频率限制
+        self._start_sync(silent=True)
+
+    def _start_sync(self, silent):
+        thread = getattr(self, '_sync_thread', None)
+        if thread is not None and thread.isRunning():
+            return
+        self._sync_silent = silent
+        thread = SharedSyncThread(self)
+        thread.done.connect(self._on_sync_done)
+        thread.fail.connect(self._on_sync_fail)
+        self._sync_thread = thread
+        thread.start()
+
+    def _on_sync_fail(self, message):
+        # 工作表对不上时不能用缓存兜底——缓存很可能是别的月份的轴
+        is_mismatch = '当前渲染的是' in message
+        cache = None if is_mismatch else load_cache()
+
+        if cache:
+            age_h = (time.time() - float(cache.get('ts', 0))) / 3600
+            print(f'[在线轴] 取数失败，改用 {cache.get("saved_at", "?")} 的缓存'
+                  f'（{age_h:.1f} 小时前）：{message.splitlines()[0]}')
             try:
-                with open('interface.json', 'r', encoding='utf-8') as f:
-                    data = json.load(f)
-                    for task in data.get('task', []):
-                        existing_scripts.add(task.get('name', ''))
-            except:
-                existing_scripts = set()
+                counts = self._import_codes(cache['codes'])
+            except Exception as e:                  # noqa: BLE001
+                print(f'[在线轴] 导入缓存失败：{e}')
+                counts = None
+            if not self._sync_silent:
+                msg = (f'{message}\n\n'
+                       f'已改用本地缓存（{cache.get("saved_at", "?")} 保存，'
+                       f'{age_h:.1f} 小时前）')
+                if counts:
+                    msg += f'\n本次新增 {counts[0]} 个脚本'
+                QMessageBox.warning(self, '获取共享轴失败', msg)
+            return
 
-            # 处理每一行共享码
-            success_count = 0
-            skip_count = 0
-            for line in response.text.strip().split('\n'):
-                if not line.strip():
-                    continue
-                    
+        if self._sync_silent:
+            print(f'[在线轴] 自动同步失败：{message}')
+        else:
+            QMessageBox.warning(self, '获取共享轴失败', message)
+
+    def _on_sync_done(self, codes, meta):
+        tab_name = (meta.get('tab') or {}).get('name', '未知')
+        save_cache(codes, meta)                         # 取到就存，下次限流时兜底
+        for warning in meta.get('warnings', []):
+            print(f'[在线轴] {warning}')
+        try:
+            new_count, skip_count, blocked_count, problems = self._import_codes(codes)
+        except Exception as e:                      # noqa: BLE001
+            if self._sync_silent:
+                print(f'自动同步在线轴失败：{e}')
+            else:
+                QMessageBox.warning(self, '获取共享轴失败', str(e))
+            return
+
+        for problem in problems:
+            print(f'[在线轴] {problem}')
+        print(f'[在线轴] {tab_name}：取到 {len(codes)} 条，新增 {new_count}，'
+              f'已存在 {skip_count}，已屏蔽 {blocked_count}')
+
+        if self._sync_silent:
+            return                                  # 静默模式：有新增也不弹窗
+
+        lines = [f'工作表：{tab_name}',
+                 f'共取到 {len(codes)} 条分享码',
+                 f'新增 {new_count} 个脚本',
+                 f'跳过 {skip_count} 个已存在的脚本']
+        if blocked_count:
+            lines.append(f'跳过 {blocked_count} 个你删除并屏蔽过的轴')
+        if problems:
+            lines.append(f'另有 {len(problems)} 条无法生成（详见控制台输出）')
+        msg = QMessageBox()
+        msg.setWindowTitle('处理结果')
+        msg.setText('\n'.join(lines))
+        msg.setIcon(QMessageBox.Information)
+        msg.exec_()
+
+    def _registered_scripts(self):
+        """只取 interface.json 里已注册的脚本名（归一化为 script_key）。"""
+        keys = set()
+        try:
+            with open('interface.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            for task in data.get('task', []):
+                key = script_key(task.get('name', ''))
+                if key:
+                    keys.add(key)
+        except Exception:                           # noqa: BLE001
+            pass
+        return keys
+
+    def _load_existing_scripts(self):
+        """收集已有脚本名，统一归一化成 script_key 便于比对。
+
+        两个来源都算「已存在」：
+        - interface.json 里注册过的 task
+        - resource/pipeline 目录下已有的 .json 文件
+
+        后者不能省：用户万一重置过 interface.json，只看注册表就会把同名脚本
+        再生成一遍（覆盖原文件），等于白跑一次。
+        """
+        keys = set()
+        try:
+            with open('interface.json', 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            for task in data.get('task', []):
+                key = script_key(task.get('name', ''))
+                if key:
+                    keys.add(key)
+        except Exception:                           # noqa: BLE001
+            pass
+        try:
+            for path in Path('resource/pipeline').glob('*.json'):
+                key = script_key(path.stem)
+                if key:
+                    keys.add(key)
+        except Exception:                           # noqa: BLE001
+            pass
+        return keys
+
+    def _import_codes(self, codes):
+        """把还原出的分享码生成脚本。返回 (新增, 跳过, 屏蔽, 问题列表)。
+
+        同名脚本一律跳过，绝不重复生成：比对的是 script_key（去偏移前缀、
+        去空白、忽略大小写），已存在的来源包括 interface.json 注册表和
+        resource/pipeline 目录里的现有文件，同一批里重复出现的也只生成一次。
+        """
+        existing = self._load_existing_scripts()
+        registered = self._registered_scripts()
+        blocked = {script_key(n) for n in load_blocked()}
+        new_count = skip_count = blocked_count = 0
+        problems = []
+
+        def skip_existing(stepname, key):
+            """同名脚本已存在——不重复生成；注册丢了就顺手补回注册表。"""
+            nonlocal skip_count
+            if key not in registered:
                 try:
-                    # 支持两种分享格式：包含 '#' 的单次UB分享码，以及以 ':' 分隔的 SET 分享码
-                    if '#' in line:
-                        # 单次UB 分享码，格式与 genbyshare() 中处理逻辑一致：stepname#content#namelist
-                        try:
-                            stepname, content, td = line.split('#')
-                        except ValueError:
-                            # 格式不对，跳过
-                            print(f"单次UB分享码格式错误: {line}")
-                            continue
+                    pipeline.register_task(stepname)
+                    registered.add(key)
+                except Exception as e:              # noqa: BLE001
+                    problems.append(f'{stepname}：补登记脚本失败 {e}')
+            skip_count += 1
 
-                        # 处理offsetX标识后再进行对比
-                        compare_name = stepname
-                        if len(stepname) >= 5 and stepname[:5].isdigit():
-                            compare_name = stepname[5:]
-                        
-                        # 如果已有同名脚本则跳过
-                        if compare_name in existing_scripts:
-                            skip_count += 1
-                            continue
+        for item in codes:
+            code = item.get('code', '')
 
-                        namelist = parse_namelist(td)
-                        if len(namelist) != 5:
-                            print(f"单次UB分享码角色名数量错误（应为5个）: {line}")
-                            continue
-                        try:
-                            # 生成单次UB脚本
-                            pipeline.generate_single_ub_pipeline(stepname, stepfile=content, namelist=namelist)
-                            success_count += 1
-                            existing_scripts.add(compare_name)
-                        except Exception as e:
-                            print(f"生成单次UB脚本失败: {line}, 错误: {e}")
-                            continue
-                    else:
-                        parts = line.split(':')
-                        if len(parts) < 2:
-                            continue
-
-                        script_name = parts[0]
-
-                        # 处理offsetX标识后再进行对比
-                        compare_name = script_name
-                        if len(script_name) >= 5 and script_name[:5].isdigit():
-                            compare_name = script_name[5:]
-
-                        # 检查是否存在同名脚本
-                        if compare_name in existing_scripts:
-                            skip_count += 1
-                            continue
-
-                        # 根据共享码生成 SET 脚本（码永远在最后一段，兼容历史格式）
-                        try:
-                            c, t = sharecode.from_share(parts[-1])
-                        except Exception as e:
-                            print(f"解析共享码失败: {line}, 错误: {e}")
-                            continue
-
-                        # 生成 SET 脚本
-                        stepname = script_name
-                        try:
-                            pipeline.generate_set_pipeline(stepname=stepname, stepfile=self.format_content(c, t))
-                            success_count += 1
-                            existing_scripts.add(compare_name)
-                        except Exception as e:
-                            print(f"生成SET脚本失败: {line}, 错误: {e}")
-                            continue
-                    
-                except Exception as e:
-                    print(f"处理共享码失败: {line}, 错误: {str(e)}")
+            # ---- 单次UB：轴名#指令串#角色名 ----
+            if item.get('type') == 'ub':
+                try:
+                    stepname, content, td = code.split('#')
+                except ValueError:
+                    problems.append(f'单次UB分享码格式错误：{code[:40]}')
                     continue
+                key = script_key(stepname)
+                if not key:
+                    problems.append(f'单次UB分享码缺少轴名：{code[:40]}')
+                    continue
+                if key in blocked:
+                    blocked_count += 1
+                    continue
+                if key in existing:
+                    skip_existing(stepname, key)
+                    continue
+                namelist = parse_namelist(td)
+                if len(namelist) != 5:
+                    problems.append(f'{stepname}：角色名 {len(namelist)} 个（应为 5 个）')
+                    continue
+                try:
+                    pipeline.generate_single_ub_pipeline(
+                        stepname, stepfile=content, namelist=namelist)
+                    new_count += 1
+                    existing.add(key)
+                    registered.add(key)
+                except Exception as e:              # noqa: BLE001
+                    problems.append(f'{stepname}：生成单次UB脚本失败 {e}')
+                continue
 
-            # 仅当成功生成脚本数大于0时才弹窗
-            if success_count > 0:
-                msg = QMessageBox()
-                msg.setWindowTitle('处理结果')
-                msg.setText(f'成功生成 {success_count} 个脚本\n跳过 {skip_count} 个已存在的脚本')
-                msg.setIcon(QMessageBox.Information)
-                msg.exec_()
-            
-        except Exception as e:
-            msg = QMessageBox()
-            msg.setText(f'获取共享轴失败：{str(e)}')
-            msg.setIcon(QMessageBox.Warning)
-            msg.exec_()
+            # ---- 开关SET：轴名:base62!延时 ----
+            if ':' not in code:
+                continue
+            script_name, _, payload = code.partition(':')
+            key = script_key(script_name)
+            if not key:
+                problems.append(f'开关SET分享码缺少轴名：{code[:40]}')
+                continue
+            if key in blocked:
+                blocked_count += 1
+                continue
+            if key in existing:
+                skip_existing(script_name, key)
+                continue
+            try:
+                c, t = sharecode.from_share(payload)
+            except Exception as e:                  # noqa: BLE001
+                problems.append(f'{script_name}：解析共享码失败 {e}')
+                continue
+            try:
+                pipeline.generate_set_pipeline(
+                    stepname=script_name, stepfile=self.format_content(c, t))
+                new_count += 1
+                existing.add(key)
+                registered.add(key)
+            except Exception as e:                  # noqa: BLE001
+                problems.append(f'{script_name}：生成SET脚本失败 {e}')
+
+        return new_count, skip_count, blocked_count, problems
+
+
     def set_speed(self, value):
         self.speed = value
         QMessageBox.information(self, "识别速度", f"已设置为{'快速' if value==100 else '中速' if value==200 else '慢速'}识别（{value}）\n计算机性能差的推荐使用快速识别")
