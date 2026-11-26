@@ -7,9 +7,15 @@
     既可作为命令行工具单独跑，也可被 generator.py 直接 import。
 
 原理
-    公开分享的表格页会把整表文本注入 HTML 里的 flyweight.texts 池。
-    一个单元格若含多种字符格式，文本会被切成多个 **相邻** 的段，
-    所以要按分享码语法把碎片拼回去。判据来自 sharecode.py：
+    公开分享的表格页会把整表文本切成很多 **相邻** 的小段，一个单元格若含多种
+    字符格式就会被拆开，所以要按分享码语法把碎片拼回去。文本所在的位置腾讯
+    改过版，两条路都支持（`extract_pool` 先试旧的，取不到再走新的）：
+
+    · 旧（>= 2026-10）：HTML 里的 `embedData.flyweight.texts` 字符串池
+    · 新（2026-11 改版）：该池变成 `"texts":[]`，文本改以 SSR 渲染指令
+      `["q",["文本",宽,偏移]]` 的形式散落在画布数据里，切分方式不变
+
+    判据来自 sharecode.py：
 
     SET 码  `轴名:base62!延时表`
         · base62 主体长度必须是 3 的倍数
@@ -30,8 +36,10 @@
 
 坑
     1. 请求**不要**带 `?tab=` 参数：带不带都不影响渲染结果，反而更容易拿到空壳。
-    2. 表格只会为「上次打开」的工作表（页面里 hidden=false 的那张）下发数据，
-       URL 参数无法切换——所以脚本会校验「当前渲染的是不是当月」，不是就报错。
+    2. 表格只会为「上次打开」的那张工作表下发数据，URL 参数切不过去——所以脚本会
+       校验「当前渲染的是不是当月」，不是就报错。
+       到底是哪张，看页面预加载链接里的 `dop-api/opendoc?...&tab=<id>`：
+       `footerDomStr` 里所有表的 `hidden` 都是 false，拿它判断会把每张表都当成当前表。
     3. 空壳页是偶发的（约 350KB 才有数据），fetch_pool 里已带重试。
 """
 
@@ -126,14 +134,11 @@ def fetch(doc_id: str, retries: int = 3, timeout: int = 30) -> str:
     raise RuntimeError(f"获取页面失败：{last}")
 
 
-def extract_pool(raw: str) -> list[str]:
-    """从页面里取出 flyweight.texts 字符串池。"""
-    u = urllib.parse.unquote(raw)
+def _flyweight_pool(u: str) -> list[str]:
+    """老结构：页面里 flyweight.texts 字符串池。"""
     i = u.find('"texts":[')
     if i < 0:
-        raise RuntimeError(
-            "页面里没有找到 texts 数据池——多半是拿到了不含数据的空壳页。"
-            "请确认表格是「获得链接的人可查看」，并重试。")
+        return []
     s = i + len('"texts":')
     depth, end = 0, s
     for k in range(s, len(u)):
@@ -147,17 +152,82 @@ def extract_pool(raw: str) -> list[str]:
     return json.loads(u[s:end])
 
 
-def parse_tabs(raw: str) -> list[dict]:
-    """解析工作表清单：[{id, name, active}]。"""
+# 新结构（腾讯文档改版后）：文本不再进 flyweight.texts（该池变成 `"texts":[]`），
+# 而是以渲染指令 `["q",["文本",宽,偏移]]` 的形式散落在 SSR 画布数据里。
+# 同一单元格仍被切成多段**相邻**的 `q` 指令，拼碎片逻辑可以照用。
+_RUN_RE = re.compile(r'\["q",\["((?:[^"\\]|\\.)*)",')
+
+
+def _render_runs(u: str) -> list[str]:
+    out = []
+    for m in _RUN_RE.finditer(u):
+        try:
+            out.append(json.loads('"%s"' % m.group(1)))
+        except Exception:            # noqa: BLE001  单段转义异常就跳过，不影响其它段
+            continue
+    return out
+
+
+def extract_pool(raw: str) -> list[str]:
+    """从页面里取出文本池（优先 flyweight.texts，取不到再退回渲染指令）。"""
     u = urllib.parse.unquote(raw)
-    pat = re.compile(
-        r'\{"id":"(?P<id>[0-9a-zA-Z]+)","name":"(?P<name>[^"]*)"'
-        r',"hidden":(?P<hidden>true|false)')
-    return [{
-        "id": m.group("id"),
-        "name": html.unescape(m.group("name")),
-        "active": m.group("hidden") == "false",
-    } for m in pat.finditer(u)]
+    pool = _flyweight_pool(u)
+    if pool:
+        return pool
+    pool = _render_runs(u)
+    if pool:
+        return pool
+    raise RuntimeError(
+        "页面里没有找到文本数据（texts 池为空、渲染指令里也没有文本）——"
+        "多半是拿到了不含数据的空壳页。请确认表格是「获得链接的人可查看」，并重试。")
+
+
+def parse_tabs(raw: str) -> list[dict]:
+    """解析工作表清单：[{id, name, active}]。
+
+    表清单藏在 `footerDomStr` 的 JSON 数组里，且**键顺序不固定**（早期版本用
+    `id,name,hidden` 的顺序写正则，改版后 `hidden` 跑到最前面，正则会漏匹配，
+    于是每张表都被当成 active=True）。当前渲染的是哪张表，看预加载链接里的
+    `dop-api/opendoc?tab=<id>` 最准——`hidden` 并不能反映它。
+    """
+    u = html.unescape(urllib.parse.unquote(raw))   # URL 里的 `&amp;` 要先还原成 `&`
+
+    tabs: list[dict] = []
+    m = re.search(r'id="footerDomStr"[^>]*>(\[.*?\])</div>', u, re.S)
+    if m:
+        try:
+            for item in json.loads(html.unescape(m.group(1))):
+                if isinstance(item, dict) and item.get("id") and "name" in item:
+                    tabs.append({"id": item["id"],
+                                 "name": html.unescape(str(item["name"])),
+                                 "active": False})
+        except Exception:            # noqa: BLE001  结构又变了就退回正则
+            tabs = []
+
+    if not tabs:
+        for mm in re.finditer(r'\{[^{}]*"id":"([0-9a-zA-Z]+)"[^{}]*\}', u):
+            blob = mm.group(0)
+            if '"name"' not in blob:
+                continue
+            try:
+                item = json.loads(blob)
+            except Exception:        # noqa: BLE001
+                continue
+            if item.get("name"):
+                tabs.append({"id": item["id"],
+                             "name": html.unescape(str(item["name"])),
+                             "active": item.get("hidden") is False})
+
+    active_id = None
+    am = re.search(r'dop-api/opendoc\?[^"\']*?[?&]tab=([0-9a-zA-Z]+)', u)
+    if am:
+        active_id = am.group(1)
+    for t in tabs:
+        t["active"] = (t["id"] == active_id) if active_id else t["active"]
+
+    if active_id and not any(t["active"] for t in tabs):
+        tabs.insert(0, {"id": active_id, "name": "", "active": True})
+    return tabs
 
 
 def fetch_pool(doc_id: str, retries: int = 4) -> tuple[str, list[dict], list[str]]:
@@ -262,12 +332,19 @@ def rebuild(pool: list[str]) -> tuple[list[dict], list[str]]:
         if ":" in seg and not seg.startswith("#"):
             axis, _, rest = seg.partition(":")
             rest = rest.lstrip(":")        # 表格里偶尔写成 `D1-42700::码`
+            # 还有写成 `D3水小黄…::` 一个冒号都不带码体、码体整段落到下一段的
+            from_next = False
+            if not rest and axis.strip() and i + 1 < n:
+                cand = pool[i + 1].strip()
+                if cand and all(c in CHARSET + "!" for c in cand):
+                    rest, from_next = cand, True
             # `!` 可能就落在起始段里，先切开，免得被字符集检查挡掉
             inline_delay = None
             if "!" in rest:
                 rest, _, inline_delay = rest.partition("!")
             if rest and all(c in CHARSET for c in rest) and axis.strip():
-                body_parts, delay, j = [rest], inline_delay, i
+                body_parts, delay = [rest], inline_delay
+                j = i + 1 if from_next else i   # 码体来自下一段时别把它算回起始段
                 if delay is None:
                     while j + 1 < n:
                         j += 1
